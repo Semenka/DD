@@ -17,6 +17,19 @@ A single report (markdown + HTML + **PDF**) with four sections plus a synthesis 
 
 Synthesis page: **Kill Shot**, **1-line bet** (≤20 words), and **Beliefs Required to Invest** — the 3-5 propositions that must each be true for this to be a fund-returner.
 
+## Search backends
+
+dd-agent uses a 4-tier search cascade. Configure any one in `.env`:
+
+| Backend | Env var | Why |
+|---|---|---|
+| **Perplexity** (recommended) | `PERPLEXITY_API_KEY` | Search + grounded synthesis in one call. Best for market sizing and funding rounds — the LLM reads pages and returns cited facts directly. |
+| **Gemini** with Google Search grounding | `GEMINI_API_KEY` | Equivalent capability via Google's search index. |
+| Tavily | `TAVILY_API_KEY` | Classic search index, URL list only. |
+| DuckDuckGo HTML | (none) | Last-resort, frequently rate-limited. |
+
+The cascade falls through in this order. With Perplexity configured, the Revoy smoke test produced 76 citations + 2 funding rounds + analyst figures for trucking electrification TAM. Without it, 0/0/none.
+
 ## Install
 
 Requires Python 3.11+. Uses [uv](https://github.com/astral-sh/uv) (recommended) or pip.

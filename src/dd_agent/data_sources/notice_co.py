@@ -69,20 +69,39 @@ async def fetch_snapshot(company_name: str) -> NoticeCoSnapshot:
 
 
 async def _find_notice_url(company_name: str) -> str | None:
-    """Try direct slug guess first, fall back to web search."""
-    slug = re.sub(r"[^a-z0-9]+", "-", company_name.lower()).strip("-")
-    guessed = f"https://notice.co/{slug}"
-    html, status = await _fetch_html(guessed)
-    if html and status < 400 and len(html) > 1000:
-        return guessed
-    # Fall back to web search
-    results = await web_search(f'site:notice.co "{company_name}"', max_results=3)
-    for r in results:
-        if "notice.co" in r.url and company_name.lower().split()[0] in r.url.lower():
-            return r.url
-    if results:
-        return results[0].url
+    """Try direct slug guesses first, fall back to web search."""
+    candidates = _slug_candidates(company_name)
+    for slug in candidates:
+        guessed = f"https://notice.co/{slug}"
+        html, status = await _fetch_html(guessed)
+        if html and status < 400 and len(html) > 1000:
+            return guessed
+
+    # Fall back to web search. With Perplexity/Gemini configured (per .env),
+    # this is a real query, not the old DDG dead-end.
+    for q in (f'site:notice.co "{company_name}"',
+              f'notice.co "{company_name}" company secondary market'):
+        results = await web_search(q, max_results=4)
+        for r in results:
+            if "notice.co/" in r.url:
+                return r.url
     return None
+
+
+def _slug_candidates(company_name: str) -> list[str]:
+    """notice.co uses a variety of slug formats. Try several."""
+    base = company_name.lower().strip()
+    out: list[str] = []
+    # 1. lowercase + dashes:  "Open AI" → "open-ai"
+    out.append(re.sub(r"[^a-z0-9]+", "-", base).strip("-"))
+    # 2. lowercase contiguous: "Open AI" → "openai"
+    out.append(re.sub(r"[^a-z0-9]+", "", base))
+    # 3. first-word only:  "Linear App" → "linear"
+    first = re.split(r"\s+", base, maxsplit=1)[0]
+    out.append(re.sub(r"[^a-z0-9]+", "", first))
+    # de-dupe preserving order
+    seen: set[str] = set()
+    return [s for s in out if s and not (s in seen or seen.add(s))]
 
 
 async def _fetch_html(url: str) -> tuple[str | None, int]:
