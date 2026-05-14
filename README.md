@@ -55,25 +55,60 @@ Both ship with seeded fallback data so the agent works before you run them.
 dd-agent serve              # stdio MCP — connect from OpenClaw / Claude Code / Cursor
 ```
 
-### OpenClaw / Claude Code config
+### Register with OpenClaw (one command)
 
-Add to your MCP config (`~/.claude.json` for Claude Code, OpenClaw equivalent):
+```bash
+openclaw mcp set dd-agent '{
+  "command": "/absolute/path/to/DD/.venv/bin/dd-agent",
+  "args": ["serve"],
+  "env": {
+    "DD_MODEL": "gpt-5.5",
+    "DD_MODEL_FAST": "gpt-5.5-mini",
+    "DD_DATA_DIR": "/absolute/path/to/DD/data",
+    "DD_DB_PATH": "/absolute/path/to/DD/data/deals.db",
+    "PATH": "/path/to/node/bin:/opt/homebrew/bin:/usr/bin:/bin"
+  }
+}'
+openclaw mcp list      # confirms "dd-agent" is registered
+openclaw mcp show dd-agent   # prints the stored config
+```
+
+The `PATH` env is necessary because OpenClaw spawns dd-agent as a fresh subprocess; without `codex` on the inherited PATH, all LLM calls inside dd-agent will fail.
+
+### Register with Claude Code / Cursor / Codex (MCP-compatible clients)
+
+Add to your client's MCP config (`~/.claude.json`, `~/.codex/config.toml`, etc.):
 
 ```json
 {
   "mcpServers": {
     "dd-agent": {
-      "command": "dd-agent",
+      "command": "/absolute/path/to/DD/.venv/bin/dd-agent",
       "args": ["serve"],
-      "env": { "DD_MODEL": "gpt-5.5" }
+      "env": { "DD_MODEL": "gpt-5.5", "PATH": "/path/to/node/bin:/usr/bin:/bin" }
     }
   }
 }
 ```
 
-Then in OpenClaw / Claude Code:
+### Submitting a deal through OpenClaw
 
-> "Use the dd-agent: submit this deal — memo at ./memo.md, deck at ./deck.pdf, company URL https://example.com"
+In the OpenClaw chat:
+
+> "Use the dd-agent. submit_deal with memo_text from /Users/me/deal.md, deck_path /Users/me/deck.pdf, company_url https://example.com. Then poll get_report_status until done, then call get_report and print the markdown."
+
+OpenClaw spawns dd-agent on demand, runs the full 4-subagent pipeline (~5 min on the sample memo), and returns the markdown report. The HTML is also available in the same response.
+
+### End-to-end verification without OpenClaw
+
+`scripts/openclaw_pipeline_test.py` reads OpenClaw's MCP config and drives dd-agent through exactly the same MCP lifecycle OpenClaw uses (spawn → initialize → tools/list → submit_deal → poll → get_report). Use it to verify the pipeline before sending real deals through OpenClaw:
+
+```bash
+.venv/bin/python scripts/openclaw_pipeline_test.py \
+  --memo examples/sample_deal/memo.md \
+  --url https://linear.app
+# → report.md, report.html
+```
 
 ## MCP tools
 

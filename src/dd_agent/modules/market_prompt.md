@@ -2,6 +2,8 @@
 
 You are writing the MARKET section. Apply Principles 1, 2, 4, 5, 7.
 
+**Do not start your output with `## Market` — the renderer adds that header. Start at `### Inflection thesis`.**
+
 ## What to produce (in this order, with markdown headings)
 
 ### Inflection thesis

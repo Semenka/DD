@@ -16,7 +16,15 @@ from ..context import DealContext, Founder, Investor, Metrics
 
 _EXTRACT_PROMPT = """You are an extractor. Given raw text from a deal memo, pitch deck, and \
 company website, extract a JSON object with the schema below. Use null for unknown values. \
-Do not invent values. Output ONLY the JSON object, no preamble.
+Do not invent values. Output ONLY the JSON object — no preamble, no markdown fences, no \
+``` blocks. Start your response with the literal character `{` and end with `}`.
+
+CRITICAL: `company_name` is required if it appears anywhere in the inputs. Look for phrases \
+like "Company: X", "# X — ...", "X is the ...", "We are X", "Investment Memo — X". If a \
+single company name appears in the memo header or first paragraph, use it.
+
+For monetary values, return USD as a number (no string suffixes). $5M → 5000000. $200K → 200000.
+For growth rates, return YoY as a decimal where 2.5 = 250%.
 
 SCHEMA:
 {
@@ -72,9 +80,9 @@ async def normalize(
     raw_deck = deck_text or ""
     raw_site = website_text or ""
 
-    data = await _extract_with_llm(raw_memo, raw_deck, raw_site)
-    if data is None:
-        data = _extract_heuristic(raw_memo, raw_deck, raw_site)
+    heuristic = _extract_heuristic(raw_memo, raw_deck, raw_site)
+    llm = await _extract_with_llm(raw_memo, raw_deck, raw_site) or {}
+    data = _merge(heuristic, llm)
 
     ctx = DealContext(
         deal_id=deal_id or uuid.uuid4().hex[:12],
@@ -144,7 +152,7 @@ def _parse_json_block(text: str) -> dict | None:
 
 # --- heuristic fallback --------------------------------------------------------
 
-_CAPITALIZED_BIGRAM = re.compile(r"\b([A-Z][a-zA-Z]+(?:\s[A-Z][a-zA-Z]+){1,2})\b")
+_CAPITALIZED_BIGRAM = re.compile(r"\b([A-Z][a-zA-Z]+(?:\s[A-Z][a-zA-Z]+){0,2})\b")
 _ARR_RE = re.compile(
     r"(?:"
     r"\$?\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?\s*(?:ARR|MRR)"  # $5M ARR
@@ -153,12 +161,36 @@ _ARR_RE = re.compile(
     r")",
     re.IGNORECASE,
 )
-_RAISE_RE = re.compile(r"raising\s+\$?\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?", re.IGNORECASE)
+_RAISE_RE = re.compile(r"raising\s*[:\-]?\s*\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?", re.IGNORECASE)
+# Common memo headers
+_COMPANY_LINE_RE = re.compile(
+    r"(?:^|\n)\s*(?:\*\*)?(?:Company|Startup|Target)\s*:?\s*(?:\*\*)?\s*([A-Z][\w\.\- ]{1,60})",
+    re.IGNORECASE,
+)
+_MEMO_TITLE_RE = re.compile(
+    r"#\s*(?:Investment\s+Memo|Deal\s+Memo|Memo)\s*[—\-:]\s*([A-Z][\w\.\- ]{1,60})",
+    re.IGNORECASE,
+)
+_STAGE_RE = re.compile(
+    # Allow markdown emphasis or stray punctuation between "Stage" and the value.
+    r"\b(?:stage|round)\b[^A-Za-z]{0,6}(seed|pre-seed|series[\s\-_]?[a-h])\b",
+    re.IGNORECASE,
+)
+_VALUATION_RE = re.compile(
+    r"(?:"
+    # "valuation: $400M", "pre-money $400M"
+    r"(?:valuation|pre[\s\-]?money|post[\s\-]?money)[^A-Za-z0-9\$]{0,8}\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?"
+    r"|"
+    # "$400M valuation", "$400M pre-money"
+    r"\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?\s+(?:valuation|pre[\s\-]?money|post[\s\-]?money)"
+    r")",
+    re.IGNORECASE,
+)
 
 
 def _extract_heuristic(memo: str, deck: str, site: str) -> dict:
     blob = "\n".join([memo, deck, site])
-    company = _guess_company(memo, deck, site) or "Unknown"
+    company = _guess_company(memo, deck, site)
 
     arr = None
     m = _ARR_RE.search(blob)
@@ -173,21 +205,77 @@ def _extract_heuristic(memo: str, deck: str, site: str) -> dict:
     if m:
         ask = float(m.group(1)) * _scale(m.group(2))
 
-    return {
-        "company_name": company,
-        "metrics": {"arr_usd": arr},
-        "ask_amount_usd": ask,
-    }
+    stage = None
+    m = _STAGE_RE.search(blob)
+    if m:
+        stage = m.group(1).lower().replace(" ", "_").replace("-", "_")
+
+    valuation = None
+    m = _VALUATION_RE.search(blob)
+    if m:
+        num = m.group(1) or m.group(3)
+        suffix = m.group(2) or m.group(4)
+        if num is not None:
+            valuation = float(num) * _scale(suffix)
+
+    result: dict = {}
+    if company:
+        result["company_name"] = company
+    if stage:
+        result["stage"] = stage
+    if arr is not None:
+        result["metrics"] = {"arr_usd": arr}
+    if ask is not None:
+        result["ask_amount_usd"] = ask
+    if valuation is not None:
+        result["ask_valuation_usd"] = valuation
+    return result
 
 
 def _guess_company(memo: str, deck: str, site: str) -> str | None:
+    """Pick the most likely company name. Priority:
+    1. Explicit "Company: X" line (covers both memo and deck)
+    2. "# Investment Memo — X" header
+    3. First capitalized phrase in the first 8 lines (last resort)
+    """
+    blob = "\n".join([memo, deck, site])
+    m = _COMPANY_LINE_RE.search(blob)
+    if m:
+        name = m.group(1).strip().rstrip(".,;:—-")
+        if name and name.lower() not in {"unknown", "tbd", "n/a"}:
+            return name
+    m = _MEMO_TITLE_RE.search(blob)
+    if m:
+        name = m.group(1).strip().rstrip(".,;:—-")
+        if name:
+            return name
     for src in (deck, memo, site):
         lines = [l.strip() for l in src.splitlines() if l.strip()][:8]
         for line in lines:
+            if line.startswith("#") or line.startswith("**"):
+                continue
             m = _CAPITALIZED_BIGRAM.match(line)
             if m and len(line) < 80:
                 return m.group(1)
     return None
+
+
+def _merge(base: dict, overlay: dict) -> dict:
+    """Merge `overlay` on top of `base`. Non-null overlay values win; nested
+    dicts merge recursively. Lists in overlay win wholesale if non-empty."""
+    out: dict = {}
+    keys = set(base) | set(overlay)
+    for k in keys:
+        b, o = base.get(k), overlay.get(k)
+        if isinstance(b, dict) or isinstance(o, dict):
+            out[k] = _merge(b or {}, o or {})
+        elif isinstance(o, list):
+            out[k] = o if o else (b or [])
+        elif o is not None and o != "":
+            out[k] = o
+        elif b is not None:
+            out[k] = b
+    return out
 
 
 def _scale(suffix: str | None) -> float:

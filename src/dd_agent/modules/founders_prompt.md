@@ -2,6 +2,8 @@
 
 You are writing the FOUNDERS section. Apply Principles 1, 3, 5, 7.
 
+**Do not start your output with `## Founders` — the renderer adds that header. Start at `### Founder/market fit`.**
+
 ## What to produce (in this order, with markdown headings)
 
 ### Founder/market fit

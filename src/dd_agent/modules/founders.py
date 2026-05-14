@@ -26,7 +26,7 @@ async def run_founders(ctx: DealContext, base_system: str) -> FoundersResult:
     if not ctx.founders:
         return FoundersResult(
             section_markdown=(
-                "## Founders\n\n*No founder data extracted from the inputs.* "
+                "*No founder data extracted from the inputs.* "
                 "Add LinkedIn URLs or names to the memo and re-submit."
             ),
             citations=[],

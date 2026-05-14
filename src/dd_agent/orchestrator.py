@@ -152,7 +152,7 @@ async def _safe(coro, label: str):
     except Exception as exc:  # noqa: BLE001
         log.exception("%s subagent failed", label)
         return _StubResult(
-            section_markdown=f"## {label.title()}\n\n*Subagent failed: `{exc}`.*",
+            section_markdown=f"*Subagent failed: `{exc}`.*",
             citations=[],
         )
 

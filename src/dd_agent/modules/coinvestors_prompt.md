@@ -2,6 +2,8 @@
 
 You are writing the CO-INVESTORS section. Apply Principles 1, 5, 7, 8.
 
+**Do not start your output with `## Co-investors` — the renderer adds that header. Start at `### Cap table summary`.**
+
 ## What to produce (in this order, with markdown headings)
 
 ### Cap table summary

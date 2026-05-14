@@ -24,8 +24,13 @@ def test_render_markdown_includes_all():
     assert "## References" in md
 
 
-def test_empty_book_renders_empty_string():
-    assert CitationBook().render_markdown() == ""
+def test_empty_book_still_renders_references_header():
+    """When the book is empty, the rendered markdown still shows a References
+    header with a clear placeholder so readers know why [n] markers in the body
+    don't resolve to anything."""
+    out = CitationBook().render_markdown()
+    assert "## References" in out
+    assert "TAVILY_API_KEY" in out
 
 
 def test_to_list_indices():

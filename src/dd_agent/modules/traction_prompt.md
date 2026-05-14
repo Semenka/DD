@@ -2,6 +2,8 @@
 
 You are writing the TRACTION section. Apply Principles 1, 5, 6, 7.
 
+**Do not start your output with `## Traction` — the renderer adds that header. Start at `### Headline metrics`.**
+
 ## What to produce (in this order, with markdown headings)
 
 ### Headline metrics

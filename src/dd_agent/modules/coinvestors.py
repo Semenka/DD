@@ -23,7 +23,7 @@ async def run_coinvestors(ctx: DealContext, base_system: str) -> CoinvestorsResu
     if not ctx.existing_investors:
         return CoinvestorsResult(
             section_markdown=(
-                "## Co-investors\n\n*No existing investors extracted from the inputs.* "
+                "*No existing investors extracted from the inputs.* "
                 "If this is a priced round, the cap table belongs in the memo."
             ),
             citations=[],

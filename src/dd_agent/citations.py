@@ -45,9 +45,15 @@ class CitationBook:
         return None if i is None else i + 1
 
     def render_markdown(self) -> str:
-        if not self.citations:
-            return ""
         lines = ["## References", ""]
+        if not self.citations:
+            lines.append(
+                "*No web sources were available during this run.* Inline `[n]` markers in the "
+                "report reflect the LLM's stated need for citations, but no live search results "
+                "were returned. Set `TAVILY_API_KEY` (free tier ~1k/mo) in `.env` to enable a "
+                "reliable web search backend, then re-submit."
+            )
+            return "\n".join(lines)
         for i, c in enumerate(self.citations, 1):
             if c.url:
                 lines.append(f"[{i}] [{c.title}]({c.url}) — *{c.source_type}*")
