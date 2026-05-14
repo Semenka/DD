@@ -12,73 +12,29 @@
 ## Synthesis
 
 ### Exec summary
-
-Linear is a real $80.0M ARR company priced at 12.5x ARR. (from memo)  
-The investment case is that AI-era software delivery makes Linear the coordination layer for humans, agents, commits, docs, and PRs. [4][6]  
-The problem is that Atlassian already shipped Jira agents with GitHub Copilot assignment, permissions, workflows, and audit trails. [4]  
-The packet omits founder evidence, existing investors, growth, net retention, gross margin, burn, and independent customer voice. (from memo)  
-The ask requires 38.3% annual revenue growth for 7 years and $772.7M terminal revenue. (from reverse_dcf)  
+Linear is an $80.0M ARR SaaS company asking $200.0M at a $1.0B valuation, or 12.5x ARR (from DealContext). The price requires 38.3% YoY growth for 7 years and $772.7M terminal revenue (from reverse_dcf). The traction file does not disclose YoY growth, gross margin, burn, net retention, churn, or Magic Number (from DealContext). Public product signal is strong but incomplete: G2 users praise speed and UI while flagging limited customization [3]. The right comps are GitLab, monday.com, and Asana; the failure case is Asana’s deceleration after product love [9].
 
 ### Beliefs Required to Invest
-
-1. We must believe that AI makes issue tracking more valuable, not less relevant, as code generation accelerates. [4][6]
-2. We must believe Linear can beat Jira’s governed enterprise graph on speed and taste. [4]
-3. We must believe $80.0M ARR can compound at 38.3% annually for 7 years. (from reverse_dcf)
-4. We must believe undisclosed net retention, growth, gross margin, burn, and Magic Number are outlier-quality. (from memo)
-5. We must believe the missing founder and cap-table data do not hide a negative signal. (from memo)
+1. We must believe Linear can compound from $80.0M ARR to $772.7M revenue in 7 years (from reverse_dcf).
+2. We must believe Linear’s undisclosed growth and retention clear a 100th-percentile SaaS underwriting bar (from reverse_dcf).
+3. We must believe product love offsets missing diligence on market, founders, burn, churn, and Magic Number (from DealContext).
+4. We must believe Linear is closer to GitLab and monday.com than Asana [7][9][10].
+5. We must believe the blank cap-table record is a data gap, not a negative signal [ref: coinvestor_lens.md].
 
 ### Kill Shot
-
-The strongest reason this deal fails is that the round prices Linear as a public-SaaS outlier before the packet proves outlier durability. (from reverse_dcf) The company needs 38.3% annual growth for 7 years, $772.7M terminal revenue, and 25.0% terminal FCF margin to justify $1.0B. (from reverse_dcf) The packet does not disclose growth, net retention, gross margin, burn, founder evidence, co-investors, or independent customer voice. (from memo) Atlassian has already productized the AI-agent inflection inside Jira’s permissioned enterprise workflow. [4] Principle 1.
+The deal asks investors to underwrite a 100th-percentile SaaS outcome without the inputs that justify one. Market work failed, founder data is absent, cap-table signal is blank, and traction omits growth, retention, burn, churn, gross margin, and Magic Number. Product love exists, but Asana shows that product love can coexist with deceleration [9]. Principle 1 says the strongest failure case is simple: this is a premium-priced growth bet with the growth evidence missing.
 
 ### 1-line bet
-
-Linear is investable only if speed beats Jira governance in AI-era software work.
+Pass until Linear proves 40% growth and 120%+ net retention at $80M ARR.
 
 ### Recommendation
-
-Pass for now — revisit at disclosed >40% YoY growth, >120% NRR, named cap table, and customer references.
+Pass for now — revisit at disclosed growth, NRR, burn, and founder/cap-table diligence.
 
 ---
 
 ## Market
 
-### Inflection thesis
-
-The inflection is AI agents entering the software-delivery workflow, where issue trackers become the coordination layer for people, agents, commits, docs, and PRs [4][6]. Atlassian made Jira agents generally available in May 2026, including GitHub Copilot coding-agent assignment from Jira work items [4]. Linear’s wedge is a faster, opinionated product-development system for engineering teams whose coordination load grows as AI accelerates code generation (speculation).
-
-### Sizing
-
-- **Today**: Same-scope estimates conflict. FMI puts project management software at $9.60B in 2026, while Grand View’s last hard base is $7.38B in 2023 and implies about $11.4B in 2026 at its 15.7% CAGR [1][2].
-- **Five-year**: A 2031 view is $17.6B-$23.7B if the cited CAGRs persist; the reported analyst endpoints are $20.47B in 2030 and $32.27B in 2036 [1][2].
-- **Growth driver**: AI-assisted planning, workflow intelligence, cloud deployment, hybrid work, and multi-team execution complexity drive the category [2].
-- **Wedge to serve**: IT and telecom represent 28.6% of project-management software usage, implying a $2.7B 2026 vertical if revenue follows usage (speculation) [2].
-- **Narrow first wedge**: Linear serves product-engineering issue tracking, sprint planning, roadmap, and triage for high-velocity software teams leaving Jira (speculation).
-
-### Competitor matrix
-
-| Company | Stage | Funding | Wedge | Why we still win OR why they win |
-|---|---:|---:|---|---|
-| Atlassian Jira | Public | FY25 revenue of $5.2B | Default enterprise system for software work, Confluence, Rovo, Bitbucket, and Jira Align [3] | Why they win: Jira agents already tie GitHub Copilot work to permissions, workflows, and audit trails [4]. |
-| Asana | Public | FY26 revenue of $790.8M | Work Graph and “system of action” for human-plus-AI work [7] | Why they win: business leaders can standardize cross-functional work outside engineering [7]. |
-| monday.com | Public | FY25 revenue of $1.232B | AI work platform for broad enterprise workflows [8] | Why they win: $100K+ ARR customers grew 45% YoY, showing upmarket pull [8]. |
-| ClickUp | Private Series C | $400M Series C at $4B valuation | All-in-one productivity platform [9] | Why they win: breadth can beat taste when buyers want one workspace for every function (speculation). |
-| Shortcut | Private Series B | $25M Series B | Project management for software teams [10] | Why Linear wins: Shortcut validates the software-team wedge but lacks comparable current market momentum (speculation). |
-| Plane | Seed / open source | $4M seed | Open-source Jira and Linear alternative [11] | Why they win: self-hosted and open-source buyers reject commercial SaaS lock-in (speculation). |
-
-### Pattern match
-
-Figma is the winner comp because a collaborative, browser-first product forced Adobe into a $20B acquisition agreement [13]. Snowflake is the wedge comp because it won cloud data warehousing through storage/compute separation and developer-first onboarding, while Teradata was the incumbent [ref: market_inflection.md]. Height is the failure comp because it raised $14M Series A, positioned around autonomous project management, and shut down on September 24, 2025 [12].
-
-### Kill Shot
-
-The kill shot is that the inflection is visible and already productized by incumbents. Atlassian made Agents in Jira generally available in May 2026, supports GitHub Copilot coding-agent assignment, and keeps agent work inside Jira permissions, workflows, and audit trails [4]. Asana and monday.com are also repositioning around AI work systems with public revenue bases of $790.8M and $1.232B [7][8]. Linear’s wedge then collapses from AI-era work graph to faster Jira for opinionated engineering teams, which can be a $300M-$600M outcome rather than venture-scale Series C underwriting (speculation).
-
-### 1-line bet
-
-Linear wins if AI-era software teams choose speed over Jira’s governed enterprise graph.
-
-Citations: [1] https://www.grandviewresearch.com/horizon/outlook/project-management-software-market-size/global [2] https://www.futuremarketinsights.com/reports/project-management-software-market [3] https://www.businesswire.com/news/home/20250807057757/en/Atlassian-Announces-Fourth-Quarter-and-Fiscal-Year-2025-Results/ [4] https://community.atlassian.com/forums/Jira-articles/Introducing-Agents-in-Jira/ba-p/3194583 [5] https://www.atlassian.com/blog/developer/developer-experience-report-2025 [6] https://stackoverflow.blog/2025/12/29/developers-remain-willing-but-reluctant-to-use-ai-the-2025-developer-survey-results-are-here/ [7] https://investors.asana.com/news-releases/news-release-details/asana-announces-fourth-quarter-and-fiscal-year-2026-results [8] https://monday.com/p/press-release/monday-com-announces-fourth-quarter-and-fiscal-year-2025-results/ [9] https://clickup.com/blog/clickup-raises-400m-in-series-c-funding/ [10] https://www.shortcut.com/blog/building-the-next-stage-of-shortcut-25m-in-series-b-funding [11] https://plane.so/blog/plane-raises-4m-seed [12] https://www.creativerly.com/height-app-is-shutting-down/ [13] https://techcrunch.com/2022/09/16/adobe-makes-20b-bet-on-a-collaborative-future-with-figma-acquisition/
+*Subagent failed: `codex exec timed out after 300.0s`.*
 
 ---
 
@@ -92,50 +48,38 @@ Citations: [1] https://www.grandviewresearch.com/horizon/outlook/project-managem
 ## Traction
 
 ### Headline metrics
-- ARR: $80.0M. (from memo)
-- Ask: $200.0M primary at $1.0B valuation. (from memo)
-- ARR multiple: 12.5x. (from memo)
-- YoY growth: not disclosed. (from memo)
-- Gross margin: not disclosed. (from memo)
-- Customer count: not disclosed. (from memo)
-- Net retention: not disclosed. (from memo)
-- Rule of 40: cannot be calculated without growth and FCF margin. [ref: saas_traction_benchmarks.md]
-- Magic Number: cannot be calculated without net new ARR and S&M spend. [ref: saas_traction_benchmarks.md]
 
-**Kill Shot**
-
-The memo gives $80.0M ARR but omits YoY growth, gross margin, customer count, net retention, burn, and Magic Number. The missing net retention number is the loudest gap because net retention above 110% is the compounding signal in SaaS. [ref: saas_traction_benchmarks.md] A $1.0B valuation on $80.0M ARR asks us to underwrite durability without the durability metrics.
-
-**1-line bet**
-
-$80M ARR is real, but the memo withholds the metrics that make 12.5x ARR investable.
+- ARR: $80.0M (from DealContext).
+- MRR: not disclosed (from DealContext).
+- YoY growth: not disclosed (from DealContext).
+- Gross margin: not disclosed (from DealContext).
+- Customer count: not disclosed in DealContext.
+- Public customer footprint: Linear claims more than 25,000 organizations [1](https://linear.app/customers).
+- Net retention: not disclosed (from DealContext).
+- Ask: $200.0M at $1.0B valuation (from DealContext).
+- Implied ARR multiple: 12.5x ARR (analysis from DealContext).
+- Latest public financing: $82.0M Series C at $1.25B valuation, led by Accel, with 01A, Sequoia, Seven Seven Six, and Designer Fund participating [2](https://techcrunch.com/2025/06/10/atlassian-rival-linear-raises-82m-at-1-25b-valuation/).
 
 ### Public-comp benchmark
-| Metric | Linear | Public SaaS distribution |
-|---|---:|---:|
-| Comp set | Linear | SNOW, DDOG, MDB, CRWD, ZS, S, NET, FSLY, ESTC, CFLT, GTLB, TEAM, ASAN, MNDY, HUBS, ZM, DOCN, BOX, DBX, PD, PATH, AI, BILL, TWLO, OKTA, BRZE, SHOP, WDAY, VEEV. (from comp_distribution) |
-| YoY growth | Not disclosed. (from memo) | p25 13.6%, p50 20.2%, p75 25.9%. (from comp_distribution) |
-| Growth percentile | Cannot calculate. (from memo) | Public distribution has 29 comps. (from comp_distribution) |
-| EV / revenue | 12.5x ARR. (from memo) | p25 2.5x, p50 4.5x, p75 8.7x. (from comp_distribution) |
-| Multiple percentile | Above p75. (from comp_distribution) | Top-quartile public SaaS multiple threshold is 8.7x. (from comp_distribution) |
-| Closest public comps by growth + sector | Cannot identify without Linear growth. (from memo) | Atlassian, GitLab, Asana are workflow/dev-product comps. (speculation) |
 
-The valuation is above the 75th percentile public-SaaS EV/revenue multiple while the growth percentile is undisclosed. (from memo; from comp_distribution)
+| Metric | Linear | Public SaaS distribution | Read |
+|---|---:|---:|---|
+| Distribution tickers | SNOW, DDOG, MDB, CRWD, ZS, S, NET, FSLY, ESTC, CFLT, GTLB, TEAM, ASAN, MNDY, HUBS, ZM, DOCN, BOX, DBX, PD, PATH, AI, BILL, TWLO, OKTA, BRZE, SHOP, WDAY, VEEV | 29 comps | Universe fallback from supplied comp_distribution. |
+| Actual YoY growth | Not disclosed | p25 13.6%; p50 20.2%; p75 25.9% | Percentile cannot be computed. |
+| Implied revenue multiple | 12.5x ARR | p25 2.54x; p50 4.49x; p75 8.69x | Above p75. |
+| Required YoY growth | 38.3% | p75 25.9% | 100th percentile per supplied reverse DCF. |
+| Closest listed comps | TEAM, ASAN, GTLB | Sector-only match | Growth match is blocked by missing Linear growth. |
 
-**Kill Shot**
-
-Linear is priced like a top-quartile public SaaS company at 12.5x ARR, but the memo does not disclose the growth rate needed to place it in that quartile. Public SaaS p75 growth is 25.9%, and the reverse DCF requires 38.3% annual growth for 7 years. (from comp_distribution; from reverse_dcf) The pricing assumes outlier growth before proving even top-quartile growth.
-
-**1-line bet**
-
-The multiple is public-top-quartile; the disclosed traction is not.
+Rule of 40 cannot be computed because YoY growth and FCF margin are missing (from DealContext).  
+Magic Number cannot be computed because net-new ARR and sales-and-marketing spend are missing (from DealContext).  
+Net retention above 110% matters more than headline growth for SaaS compounding [ref: saas_traction_benchmarks.md].
 
 ### Reverse DCF — the killer output
-Linear must compound revenue at 38.3% annually for 7 years to justify $1.0B at a 25.0% terminal FCF margin. (from reverse_dcf)
 
-That implies $772.7M terminal revenue and $193.2M terminal FCF. (from reverse_dcf)
-
-That required growth is the 100th percentile versus the supplied public-SaaS distribution. (from reverse_dcf)
+Required growth is 38.3% YoY for 7 years at a 25.0% terminal FCF margin (from reverse_dcf).  
+Implied terminal revenue is $772.7M (from reverse_dcf).  
+Implied terminal FCF is $193.2M (from reverse_dcf).  
+That required growth sits at the 100th percentile of supplied public-SaaS history (from reverse_dcf).
 
 | Terminal FCF margin | 5 years | 7 years | 10 years |
 |---:|---:|---:|---:|
@@ -145,51 +89,32 @@ That required growth is the 100th percentile versus the supplied public-SaaS dis
 | 30% | 45.0% | 34.7% | 27.4% |
 | 35% | 40.6% | 31.8% | 25.5% |
 
-You would need to believe Linear can sustain 38.3% annual revenue growth for 7 years while ending at 25.0% FCF margin. (from reverse_dcf)
-
-That puts the bet at the 100th percentile of public SaaS history in the supplied distribution. (from reverse_dcf)
-
-**Kill Shot**
-
-The valuation only clears if Linear becomes a public-SaaS outlier from an $80.0M ARR base. (from reverse_dcf) The company needs $772.7M terminal revenue, 25.0% FCF margin, and 38.3% annual growth for 7 years. (from reverse_dcf) The memo does not disclose current growth, net retention, gross margin, or burn to support that path. (from memo)
-
-**1-line bet**
-
-The ask prices Linear as a public-SaaS outlier before showing outlier operating data.
+You need to believe Linear compounds revenue from $80.0M to $772.7M in 7 years.  
+That underwriting case sits at the 100th percentile of supplied public-SaaS history.
 
 ### Independent voice
-No review, social, or employee signals were supplied in `<review_signals>`. (from memo)
 
-No G2, Capterra, ProductHunt, Reddit, Hacker News, or Glassdoor evidence can be cited from the provided inputs. (from memo)
-
-Customer love may exist, but it is not evidenced in this packet. (speculation)
-
-**Kill Shot**
-
-The memo asks us to pay for product-market strength without third-party customer evidence. The absence of review and social signals matters because Linear’s category has visible user communities, public alternatives, and switching conversations. (speculation) No independent voice means no outside check on retention, expansion, or workflow lock-in.
-
-**1-line bet**
-
-The customer voice is absent, so traction depends entirely on company-supplied ARR.
+- G2 shows 4.5/5 across 81 reviews, with users praising speed, ease of use, UI, and integrations [3](https://www.g2.com/products/linear/reviews).
+- G2 also flags limited customization, missing features, and lack of tools as recurring cons [3](https://www.g2.com/products/linear/reviews).
+- Product Hunt shows 4.9/5 across 394 reviews, with reviewers calling Linear fast and low-friction while flagging rigid workflows and limited board flexibility [4](https://www.producthunt.com/products/linear).
+- Trustpilot is thin and mixed: 3.4/5 across 8 reviews, including one 2026 complaint about account deletion and one positive MCP review [5](https://www.trustpilot.com/review/linear.app).
+- Reddit signal is split: users praise Linear versus Jira for speed, but product-management users flag weak roadmap visibility and cross-functional planning [6](https://www.reddit.com/r/projectmanagement/comments/1qoc84j/linear_vs_asana_for_product_teams_what_actually/).
 
 ### Pattern match
-| Company | ARR snapshot | Outcome pattern | Why it matters |
+
+| Company | ARR snapshot matched | Outcome | Lesson |
 |---|---:|---|---|
-| GitLab | Near $80M ARR before public scale. (speculation) | Winner. | Developer workflow monetized from team adoption into enterprise expansion. (speculation) |
-| Atlassian | Near $80M revenue before durable public scale. (speculation) | Winner. | Product-led team software became a system of record across engineering and business teams. (speculation) |
-| Asana | Above $80M ARR before IPO scale. (speculation) | Stall-out relative to premium SaaS expectations. | Work-management enthusiasm did not automatically produce premium public-market efficiency. (speculation) |
+| GitLab | Near-$100M ARR club in 2019; ARR growth rate 143% [7](https://about.gitlab.com/press/releases/2019-09-17-gitlab-raises-268m-to-expanding-leading-devops-platform/) | Winner | Developer workflow can support premium pricing when NRR and expansion are disclosed. |
+| Asana | Crossed $100M ARR in 2019 [8](https://news.crunchbase.com/venture/asana-crosses-100m-arr-after-eight-quarters-of-accelerating-growth/) | Stall-out | Product love did not stop deceleration to 9% YoY Q4 FY2026 revenue growth [9](https://investors.asana.com/news-releases/news-release-details/asana-announces-fourth-quarter-and-fiscal-year-2026-results). |
+| monday.com | Scaled north of $100M ARR before IPO filing [10](https://techcrunch.com/2021/05/17/fast-growth-pushes-an-unprofitable-no-code-startup-into-the-public-markets-inside-monday-coms-ipo-filing/) | Winner | Broad work management can scale, but Linear has not disclosed comparable retention or CAC data. |
 
-Linear’s closest positive pattern is developer-workflow software that expands from bottoms-up adoption into enterprise budgets. (speculation)
+### Kill Shot
 
-Linear’s closest negative pattern is work-management software that wins users but fails to show enough net retention and margin to sustain a premium multiple. (speculation)
+Principle 1: The valuation asks investors to pay 12.5x ARR, above the supplied public-SaaS p75 multiple of 8.69x, while the memo omits YoY growth, gross margin, burn, net retention, churn, and Magic Number. The reverse DCF requires 38.3% YoY growth for 7 years and $772.7M terminal revenue. That is a 100th-percentile public-SaaS growth bet without the metrics needed to prove Linear deserves a 100th-percentile underwriting case.
 
-**Kill Shot**
+### 1-line bet
 
-The best comp path is GitLab or Atlassian, but the disclosed metrics do not prove that path. The failed comp risk is Asana: admired product, real revenue, and a public-market multiple reset when growth and efficiency did not support the narrative. (speculation) Without net retention and growth, Linear could be a beloved tool rather than a compounding system of record.
-
-**1-line bet**
-
-Linear needs GitLab economics; the packet only proves Asana-level narrative risk.
+Buy only if retention is 120%+ and growth is 40% at $80M ARR.
 
 ### Reverse DCF — model output (raw)
 
@@ -216,8 +141,52 @@ Required growth (YoY):   38%Implied terminal rev:    $772,665,346Growth %ile vs 
 
 ## Co-investors
 
-*No existing investors extracted from the inputs.* If this is a priced round, the cap table belongs in the memo.
+### Round-by-round funding history
 
+*No private funding rounds were extractable from free-tier search. The company may be unannounced, very early, or behind authoritative paywalls (Crunchbase Pro, PitchBook).*
+
+### notice.co secondary-market snapshot
+
+No live notice.co quote available — No notice.co listing found for Linear via web search.
+
+### Cap table summary (current round)
+
+| Investor | Type | Round(s) | Lead? | Why they exist on this cap table |
+|---|---:|---:|---:|---|
+| — | — | — | — | No investor row can be created because `DealContext.existing_investors` is empty and `<funding_rounds>` is empty. |
+
+### Smart-money lens
+
+No top-3 investor ranking is possible. The supplied data names no investor and no partner. Elad’s cap-table read starts with who led, who followed on, which partner made the bet, and who is missing [ref: coinvestor_lens.md]. The diligence gap is the signal here. Principle 8 says the cap table is a record of beliefs, but this record is blank.
+
+### Expected value-add by investor
+
+No investor-specific value-add can be assigned. Elad’s VC value-add frame is executive-hire pattern recognition, CEO defense in hard boardroom conversations, and competitor backchannels [ref: high_growth_handbook_principles.md]. The supplied record names no board member, lead partner, follow-on investor, or portfolio overlap.
+
+### Round dynamics
+
+No size, valuation, dilution, lead, pro rata, competitive-process, or signaling details are present in the supplied funding history. Existing investors not following pro rata is the loudest venture signal when observed [ref: coinvestor_lens.md]. It is not observed here.
+
+### Pattern match
+
+| Historical round | Read-through |
+|---|---|
+| Facebook seed round | Fund-returner frame for a named high-conviction outside backer, but not assignable because no Linear lead or angel is supplied. (speculation) |
+| Slack Series C | Fund-returner frame for collaboration software with major venture validation, but not assignable without cited investor overlap. (speculation) |
+| Quibi pre-launch financing | Dilution-trap frame for capital quality masking product risk, but not assignable because no strategic or tourist investor is supplied. (speculation) |
+
+### Kill Shot
+
+The red flag is evidentiary. The supplied record has no extractable rounds, no named existing investors, no partner names, and no secondary quote. Elad’s lens says the lead, partner, follow-on behavior, and missing investors are the cap-table signal [ref: coinvestor_lens.md]. This file gives none of them. A positive read on smart-money support would be story, not diligence. Principles 1, 5, and 8 apply.
+
+### 1-line bet
+
+No cap-table signal exists; underwrite Linear on primary business evidence, not investor halo.
+
+
+### notice.co — secondary-market snapshot (raw data)
+
+*No live quote on notice.co — No notice.co listing found for Linear via web search.*
 ---
 
 ## References

@@ -62,6 +62,23 @@ def render_html(*, markdown_text: str, deal_context: DealContext) -> str:
     )
 
 
+def render_pdf(*, html: str, out_path: str | None = None) -> bytes:
+    """Render the HTML report to a PDF. Returns the PDF bytes; if `out_path` is
+    provided, also writes to disk. Uses weasyprint (no external binary needed)."""
+    try:
+        from weasyprint import HTML
+    except ImportError as exc:  # pragma: no cover - covered by install path
+        raise RuntimeError(
+            "weasyprint not installed. `pip install weasyprint` "
+            "(macOS may also need `brew install pango cairo`)."
+        ) from exc
+    pdf_bytes = HTML(string=html).write_pdf()
+    if out_path:
+        with open(out_path, "wb") as f:
+            f.write(pdf_bytes)
+    return pdf_bytes
+
+
 # --- minimal markdown → HTML (no external dep) -------------------------------
 
 

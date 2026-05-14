@@ -39,6 +39,7 @@ class DealRecord:
     context_json: str | None = None
     report_markdown: str | None = None
     report_html: str | None = None
+    report_pdf_path: str | None = None
     citations_json: str | None = None
 
     def to_summary(self) -> dict[str, Any]:
@@ -66,12 +67,18 @@ CREATE TABLE IF NOT EXISTS deals (
     context_json TEXT,
     report_markdown TEXT,
     report_html TEXT,
+    report_pdf_path TEXT,
     citations_json TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_deals_status ON deals(status);
 CREATE INDEX IF NOT EXISTS idx_deals_created_at ON deals(created_at);
 """
+
+# Run light-touch migrations so existing DBs pick up new columns.
+_MIGRATIONS = [
+    "ALTER TABLE deals ADD COLUMN report_pdf_path TEXT",
+]
 
 
 class DealStore:
@@ -82,6 +89,13 @@ class DealStore:
     async def init(self) -> None:
         async with aiosqlite.connect(self.db_path) as db:
             await db.executescript(_SCHEMA)
+            # Apply each migration; tolerate "duplicate column" errors when the
+            # column already exists.
+            for stmt in _MIGRATIONS:
+                try:
+                    await db.execute(stmt)
+                except Exception:
+                    pass
             await db.commit()
 
     async def create(self, company_name: str | None = None) -> DealRecord:
@@ -153,15 +167,17 @@ class DealStore:
         markdown: str,
         html: str,
         citations: list[dict[str, Any]],
+        pdf_path: str | None = None,
     ) -> None:
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 "UPDATE deals SET report_markdown = ?, report_html = ?, "
-                "citations_json = ?, status = ?, phase = ?, progress_pct = ?, updated_at = ? "
-                "WHERE deal_id = ?",
+                "report_pdf_path = ?, citations_json = ?, status = ?, phase = ?, "
+                "progress_pct = ?, updated_at = ? WHERE deal_id = ?",
                 (
                     markdown,
                     html,
+                    pdf_path,
                     json.dumps(citations),
                     DealStatus.DONE.value,
                     "done",
@@ -204,5 +220,6 @@ def _row_to_record(row: aiosqlite.Row) -> DealRecord:
         context_json=row["context_json"],
         report_markdown=row["report_markdown"],
         report_html=row["report_html"],
+        report_pdf_path=row["report_pdf_path"] if "report_pdf_path" in row.keys() else None,
         citations_json=row["citations_json"],
     )

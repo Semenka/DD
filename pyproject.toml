@@ -27,6 +27,7 @@ dependencies = [
     "aiosqlite>=0.20.0",
     "tavily-python>=0.3.3",
     "Pillow>=10.2.0",
+    "weasyprint>=61.0",
 ]
 
 [project.optional-dependencies]

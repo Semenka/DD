@@ -83,6 +83,35 @@ Growth %ile vs public:   {% if extras['reverse_dcf']['growth_percentile_vs_publi
 
 {{ coinvestors }}
 
+{% if extras.get('funding_rounds') %}
+### Round-by-round history (raw data)
+
+| Round | Date | Amount | Post-money | Lead | Participants |
+|---|---|---:|---:|---|---|
+{% for r in extras['funding_rounds'] %}| {{ r.round_type or '—' }} | {{ r.date or '—' }} | {% if r.amount_usd %}${{ '{:,.0f}'.format(r.amount_usd) }}{% else %}—{% endif %} | {% if r.post_money_valuation_usd %}${{ '{:,.0f}'.format(r.post_money_valuation_usd) }}{% else %}—{% endif %} | {{ r.lead_investors | join(', ') if r.lead_investors else '—' }} | {{ r.participants | join(', ') if r.participants else '—' }} |
+{% endfor %}
+{% endif %}
+
+{% if extras.get('notice_co') %}
+### notice.co — secondary-market snapshot (raw data)
+
+{% set n = extras['notice_co'] %}
+{% if n.available %}
+```
+Last price/share:    {% if n.last_price_per_share is not none %}${{ '{:,.2f}'.format(n.last_price_per_share) }}{% else %}—{% endif %}
+Implied valuation:   {% if n.implied_valuation_usd is not none %}${{ '{:,.0f}'.format(n.implied_valuation_usd) }}{% else %}—{% endif %}
+Bid:                 {% if n.bid is not none %}${{ '{:,.2f}'.format(n.bid) }}{% else %}—{% endif %}
+Ask:                 {% if n.ask is not none %}${{ '{:,.2f}'.format(n.ask) }}{% else %}—{% endif %}
+Bid-ask mid:         {% if n.bid_ask_mid is not none %}${{ '{:,.2f}'.format(n.bid_ask_mid) }}{% else %}—{% endif %}
+Last trade date:     {{ n.last_trade_date or '—' }}
+Source:              {{ n.source_url or '—' }}
+```
+{% else %}
+*No live quote on notice.co — {{ n.note or 'reason unspecified' }}*{% if n.source_url %}
+Source attempted: [{{ n.source_url }}]({{ n.source_url }}){% endif %}
+{% endif %}
+{% endif %}
+
 ---
 
 {{ citations_md }}

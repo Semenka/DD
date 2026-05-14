@@ -31,6 +31,35 @@ class Investor:
 
 
 @dataclass
+class FundingRound:
+    """A single private funding round with as much detail as can be sourced."""
+    round_type: str | None = None          # "seed", "series_a", "series_b", etc.
+    date: str | None = None                # "2023-09" or "2023-09-15"
+    amount_usd: float | None = None
+    post_money_valuation_usd: float | None = None
+    pre_money_valuation_usd: float | None = None
+    lead_investors: list[str] = field(default_factory=list)
+    participants: list[str] = field(default_factory=list)
+    source_url: str | None = None          # citation
+    source_title: str | None = None
+    notes: str | None = None
+
+
+@dataclass
+class NoticeCoSnapshot:
+    """Current secondary-market state on notice.co for this company."""
+    available: bool = False
+    last_price_per_share: float | None = None
+    implied_valuation_usd: float | None = None
+    bid: float | None = None
+    ask: float | None = None
+    bid_ask_mid: float | None = None
+    last_trade_date: str | None = None
+    source_url: str | None = None
+    note: str | None = None                # explanatory text when no data
+
+
+@dataclass
 class Metrics:
     arr_usd: float | None = None
     mrr_usd: float | None = None

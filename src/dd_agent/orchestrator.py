@@ -30,7 +30,7 @@ from .modules.coinvestors import run_coinvestors
 from .modules.founders import run_founders
 from .modules.market import run_market
 from .modules.traction import run_traction
-from .report.renderer import render_markdown, render_html
+from .report.renderer import render_markdown, render_html, render_pdf
 from .state import DealStatus, DealStore
 
 log = logging.getLogger("dd_agent.orchestrator")
@@ -47,6 +47,7 @@ async def submit(
     *,
     store: DealStore,
     memo_text: str | None = None,
+    memo_path: str | None = None,
     deck_path: str | None = None,
     company_url: str | None = None,
     founder_names: list[str] | None = None,
@@ -57,6 +58,7 @@ async def submit(
         store=store,
         deal_id=record.deal_id,
         memo_text=memo_text,
+        memo_path=memo_path,
         deck_path=deck_path,
         company_url=company_url,
         founder_names=founder_names,
@@ -69,6 +71,7 @@ async def _run_pipeline(
     store: DealStore,
     deal_id: str,
     memo_text: str | None,
+    memo_path: str | None,
     deck_path: str | None,
     company_url: str | None,
     founder_names: list[str] | None,
@@ -76,6 +79,10 @@ async def _run_pipeline(
     try:
         await store.update_status(deal_id, status=DealStatus.INGESTING,
                                   phase="ingesting inputs", progress_pct=5)
+
+        # If memo came as a PDF, extract its text. memo_text wins when both are set.
+        if not memo_text and memo_path and Path(memo_path).exists():
+            memo_text = await asyncio.to_thread(extract_pdf, memo_path)
 
         deck_text = None
         if deck_path and Path(deck_path).exists():
@@ -133,16 +140,34 @@ async def _run_pipeline(
         )
         html = render_html(markdown_text=md, deal_context=ctx)
 
+        pdf_path = await _write_pdf(deal_id=deal_id, html=html)
+
         await store.save_report(
             deal_id=deal_id,
             markdown=md,
             html=html,
             citations=merged["citations"].to_list(),
+            pdf_path=pdf_path,
         )
     except Exception as exc:  # noqa: BLE001
         log.exception("pipeline failed: %s", exc)
         await store.update_status(deal_id, status=DealStatus.FAILED,
                                   phase="failed", error=str(exc))
+
+
+async def _write_pdf(*, deal_id: str, html: str) -> str | None:
+    """Render the HTML report to PDF on disk. Returns the absolute path or
+    None on failure (PDF generation is best-effort — the report itself is
+    already stored as markdown + html)."""
+    out_dir = Path(os.environ.get("DD_DATA_DIR", "./data")) / "reports"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{deal_id}.pdf"
+    try:
+        await asyncio.to_thread(render_pdf, html=html, out_path=str(out_path))
+        return str(out_path.resolve())
+    except Exception as exc:  # noqa: BLE001
+        log.warning("PDF rendering failed for %s: %s", deal_id, exc)
+        return None
 
 
 async def _safe(coro, label: str):
@@ -192,6 +217,11 @@ def _merge_sections(market, founders, traction, coinvestors) -> dict:
         extras["comp_distribution"] = traction.comp_distribution
     if hasattr(founders, "photo_analyses"):
         extras["photo_analyses"] = [p.to_dict() for p in founders.photo_analyses]
+    if hasattr(coinvestors, "funding_rounds"):
+        from dataclasses import asdict
+        extras["funding_rounds"] = [asdict(r) for r in coinvestors.funding_rounds]
+    if hasattr(coinvestors, "notice_co") and coinvestors.notice_co is not None:
+        extras["notice_co"] = coinvestors.notice_co.__dict__
 
     return {
         "market": remapped["market"],

@@ -8,12 +8,12 @@ Exposed as an **MCP server** so OpenClaw, Claude Code, Cursor, Codex, or any MCP
 
 ## What it produces
 
-A single report with four sections plus a synthesis page:
+A single report (markdown + HTML + **PDF**) with four sections plus a synthesis page:
 
 1. **Market** — current/projected size, competitor matrix, inflection thesis
 2. **Founders** — track record, integrity signals, energy, founder/market fit, last shipped projects, photo similarity vs 1B+ company founders
 3. **Traction** — reverse DCF + public-comp percentiles, ARR growth vs SaaS comps, independent-voice (G2/HN/Reddit) signal
-4. **Co-investors** — cap-table breakdown vs top VCs and super-angels, per-investor value-add hypothesis
+4. **Co-investors** — round-by-round private funding history (round, date, amount, post-money, lead, participants) **+ live notice.co secondary-market snapshot** (last price, bid, ask, implied valuation) + cap-table breakdown vs top VCs and super-angels + per-investor value-add hypothesis
 
 Synthesis page: **Kill Shot**, **1-line bet** (≤20 words), and **Beliefs Required to Invest** — the 3-5 propositions that must each be true for this to be a fund-returner.
 
@@ -91,31 +91,46 @@ Add to your client's MCP config (`~/.claude.json`, `~/.codex/config.toml`, etc.)
 }
 ```
 
-### Submitting a deal through OpenClaw
+### Telegram → DD agent → Telegram PDF (the production flow)
 
-From the OpenClaw CLI (or chat):
+The intended workflow is: drop the deal memo and pitch deck PDFs into a Telegram chat with OpenClaw, ask Andrey-style ("analyze this deal" or similar), and receive a PDF back on the same channel a few minutes later.
+
+This is wired through OpenClaw's `main` agent. The agent's instructions live in `~/.openclaw/workspace/TOOLS.md` under the "DD agent" heading and tell `main` to:
+
+1. Save Telegram PDF attachments to disk
+2. Call `dd-agent submit_deal` with `memo_path` and `deck_path`
+3. Acknowledge the user with the `deal_id`
+4. Poll `get_report_status` every 30s
+5. Call `get_report` with `include_pdf_base64=true`
+6. Reply on the same channel with the PDF attached, filename `{Company}-DD-{deal_id}.pdf`, and the report's 1-line bet as message text
+
+The dd-agent MCP server has been extended for this:
+
+- `submit_deal` now accepts `memo_path` (PDF/text/markdown file path) in addition to `memo_text` — so OpenClaw can hand off whatever the user attached.
+- `get_report` accepts `include_pdf_base64=true` to return the report PDF inline (base64-encoded), and `pdf_path` (absolute path on the host).
+
+### Submitting a deal manually from the OpenClaw CLI
 
 ```bash
 openclaw agent --agent main --message '
-Use the dd-agent MCP server. Call submit_deal with:
-  - memo_text: read the file /Users/me/deal_memo.md
-  - deck_path: /Users/me/deck.pdf       (absolute path; null if no deck)
-  - company_url: https://example.com    (null if no website)
-  - founder_names: ["Founder One", "Founder Two"]  (optional)
+Use dd-agent. Call submit_deal with:
+  - memo_path: "/Users/me/deal_memo.pdf"
+  - deck_path: "/Users/me/deck.pdf"
+  - company_url: "https://example.com"
 Return the deal_id.
 '
 ```
 
-Then poll status and fetch the report:
+Then poll + retrieve:
 
 ```bash
 openclaw agent --agent main --message '
-Call dd-agent get_report_status with deal_id="...". When status is "done",
-call get_report and print the markdown.
+Call dd-agent get_report_status with deal_id="...". When done, call
+get_report with include_pdf_base64=true. Save the PDF to /tmp/report.pdf.
 '
 ```
 
-A verified end-to-end run against `examples/sample_deal/memo.md` is committed at [`examples/sample_deal/linear_report.md`](examples/sample_deal/linear_report.md) — submitted from OpenClaw's `main` agent (`openai-codex/gpt-5.5`), executed in ~5 min, produces all required artifacts (Synthesis, Beliefs Required, Kill Shot, 1-line bet, Recommendation, Reverse DCF with sweep table, public-comp benchmark).
+A verified end-to-end run against `examples/sample_deal/memo.pdf` is committed at [`examples/sample_deal/linear_report.md`](examples/sample_deal/linear_report.md) (and the corresponding `.pdf`) — submitted from OpenClaw's `main` agent (`openai-codex/gpt-5.5`), executed in ~6 min, produces all required artifacts (Synthesis, Beliefs Required, Kill Shot, 1-line bet, Recommendation, Reverse DCF with sweep table, public-comp benchmark, **round-by-round funding history**, **notice.co snapshot**).
 
 ### End-to-end verification without OpenClaw
 

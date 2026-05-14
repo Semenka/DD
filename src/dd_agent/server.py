@@ -40,26 +40,31 @@ _store = DealStore()
 @mcp.tool()
 async def submit_deal(
     memo_text: str | None = None,
+    memo_path: str | None = None,
     deck_path: str | None = None,
     company_url: str | None = None,
     founder_names: list[str] | None = None,
 ) -> dict[str, Any]:
     """Submit a deal for due diligence.
 
-    Provide at least one of:
-      - memo_text: the deal memo as text
+    Provide at least one input:
+      - memo_text: the deal memo as plain text
+      - memo_path: absolute path to a deal memo (PDF, text, or markdown). Used
+        when the memo came in as an attachment (e.g. a PDF posted in Telegram).
       - deck_path: absolute path to a pitch deck PDF
       - company_url: the company website URL
+      - founder_names: list of founder names (used when not extractable from inputs)
 
     Returns immediately with a `deal_id`. The DD pipeline runs in the background;
     poll get_report_status(deal_id) until phase=='done', then call get_report.
     """
     await _store.init()
-    if not any([memo_text, deck_path, company_url]):
-        return {"error": "provide at least one of memo_text, deck_path, company_url"}
+    if not any([memo_text, memo_path, deck_path, company_url]):
+        return {"error": "provide at least one of memo_text, memo_path, deck_path, company_url"}
     submitted = await submit(
         store=_store,
         memo_text=memo_text,
+        memo_path=memo_path,
         deck_path=deck_path,
         company_url=company_url,
         founder_names=founder_names,
@@ -82,12 +87,22 @@ async def get_report_status(deal_id: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def get_report(deal_id: str) -> dict[str, Any]:
+async def get_report(
+    deal_id: str,
+    include_pdf_base64: bool = False,
+    include_markdown: bool = True,
+    include_html: bool = False,
+) -> dict[str, Any]:
     """Retrieve the final DD report for a completed deal.
 
-    Returns: {markdown, html, citations}. If the deal is not yet complete,
-    returns {status, phase, progress_pct} so the caller can keep polling.
+    Returns: {markdown, html, pdf_path, citations, company}.
+    Optionally include `pdf_base64` for callers (e.g. Telegram bots) that need
+    to attach the PDF directly. Suppress `html` for size if you only need to
+    forward the PDF; suppress `markdown` if the caller only needs the PDF path.
+
+    If the deal is not yet complete, returns {status, phase, progress_pct}.
     """
+    import base64
     await _store.init()
     record = await _store.get(deal_id)
     if record is None:
@@ -99,13 +114,23 @@ async def get_report(deal_id: str) -> dict[str, Any]:
             "progress_pct": record.progress_pct,
             "error": record.error,
         }
-    return {
+    result: dict[str, Any] = {
         "deal_id": record.deal_id,
         "company": record.company_name,
-        "markdown": record.report_markdown,
-        "html": record.report_html,
+        "pdf_path": record.report_pdf_path,
         "citations": json.loads(record.citations_json) if record.citations_json else [],
     }
+    if include_markdown:
+        result["markdown"] = record.report_markdown
+    if include_html:
+        result["html"] = record.report_html
+    if include_pdf_base64 and record.report_pdf_path:
+        try:
+            with open(record.report_pdf_path, "rb") as f:
+                result["pdf_base64"] = base64.b64encode(f.read()).decode("ascii")
+        except OSError as exc:
+            result["pdf_base64_error"] = str(exc)
+    return result
 
 
 @mcp.tool()
