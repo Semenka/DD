@@ -93,11 +93,29 @@ Add to your client's MCP config (`~/.claude.json`, `~/.codex/config.toml`, etc.)
 
 ### Submitting a deal through OpenClaw
 
-In the OpenClaw chat:
+From the OpenClaw CLI (or chat):
 
-> "Use the dd-agent. submit_deal with memo_text from /Users/me/deal.md, deck_path /Users/me/deck.pdf, company_url https://example.com. Then poll get_report_status until done, then call get_report and print the markdown."
+```bash
+openclaw agent --agent main --message '
+Use the dd-agent MCP server. Call submit_deal with:
+  - memo_text: read the file /Users/me/deal_memo.md
+  - deck_path: /Users/me/deck.pdf       (absolute path; null if no deck)
+  - company_url: https://example.com    (null if no website)
+  - founder_names: ["Founder One", "Founder Two"]  (optional)
+Return the deal_id.
+'
+```
 
-OpenClaw spawns dd-agent on demand, runs the full 4-subagent pipeline (~5 min on the sample memo), and returns the markdown report. The HTML is also available in the same response.
+Then poll status and fetch the report:
+
+```bash
+openclaw agent --agent main --message '
+Call dd-agent get_report_status with deal_id="...". When status is "done",
+call get_report and print the markdown.
+'
+```
+
+A verified end-to-end run against `examples/sample_deal/memo.md` is committed at [`examples/sample_deal/linear_report.md`](examples/sample_deal/linear_report.md) — submitted from OpenClaw's `main` agent (`openai-codex/gpt-5.5`), executed in ~5 min, produces all required artifacts (Synthesis, Beliefs Required, Kill Shot, 1-line bet, Recommendation, Reverse DCF with sweep table, public-comp benchmark).
 
 ### End-to-end verification without OpenClaw
 
