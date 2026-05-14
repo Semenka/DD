@@ -1,0 +1,88 @@
+# DD Report — {{ ctx.company_name }}
+
+**{{ ctx.headline() }}**
+{% if ctx.one_liner %}*{{ ctx.one_liner }}*{% endif %}
+
+- **Ask:** {% if ctx.ask_amount_usd %}${{ '{:,.0f}'.format(ctx.ask_amount_usd) }}{% else %}unknown{% endif %} at {% if ctx.ask_valuation_usd %}${{ '{:,.0f}'.format(ctx.ask_valuation_usd) }}{% else %}unknown{% endif %} valuation
+- **Round:** {{ ctx.round_type or ctx.stage or 'unknown' }}
+- **Website:** {% if ctx.website %}[{{ ctx.website }}]({{ ctx.website }}){% else %}unknown{% endif %}
+- **Founded:** {{ ctx.founded_year or 'unknown' }}
+- **HQ:** {{ ctx.hq_location or 'unknown' }}
+
+---
+
+## Synthesis
+
+{{ synthesis }}
+
+---
+
+## Market
+
+{{ market }}
+
+---
+
+## Founders
+
+{{ founders }}
+
+{% if extras.get('photo_analyses') %}
+### Photo similarity output (raw)
+
+{% for p in extras['photo_analyses'] %}
+- **{{ p.founder_name }}** — available: {{ p.available }}{% if p.note %} ({{ p.note }}){% endif %}
+{% if p.available %}
+  - Trait scores: {% for k, v in p.trait_scores.items() %}{{ k }}={{ v }}{% if not loop.last %}, {% endif %}{% endfor %}
+  - Nearest matches (cosine sim):
+{% for m in p.nearest %}    - {{ m.company }} ({{ '{:.2f}'.format(m.similarity) }}) — founder_id {{ m.founder_id }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+---
+
+## Traction
+
+{{ traction }}
+
+{% if extras.get('reverse_dcf') %}
+### Reverse DCF — model output (raw)
+
+```
+Ask valuation:           ${{ '{:,.0f}'.format(extras['reverse_dcf']['ask_valuation_usd']) }}
+Current ARR:             ${{ '{:,.0f}'.format(extras['reverse_dcf']['current_arr_usd']) }}
+Years to terminal:       {{ extras['reverse_dcf']['years_to_terminal'] }}
+Terminal FCF margin:     {{ '{:.0%}'.format(extras['reverse_dcf']['required_fcf_margin']) }}
+Required growth (YoY):   {% if extras['reverse_dcf']['required_growth_yoy'] %}{{ '{:.0%}'.format(extras['reverse_dcf']['required_growth_yoy']) }}{% else %}unreachable{% endif %}
+Implied terminal rev:    {% if extras['reverse_dcf']['implied_terminal_revenue_usd'] %}${{ '{:,.0f}'.format(extras['reverse_dcf']['implied_terminal_revenue_usd']) }}{% else %}—{% endif %}
+Growth %ile vs public:   {% if extras['reverse_dcf']['growth_percentile_vs_public'] is not none %}{{ '{:.0f}'.format(extras['reverse_dcf']['growth_percentile_vs_public']) }}th{% else %}—{% endif %}
+```
+
+> {{ extras['reverse_dcf']['interpretation'] }}
+
+#### Sweep — required growth at (margin, years)
+
+| Terminal margin | 5 yrs | 7 yrs | 10 yrs |
+|---|---|---|---|
+{% set rows = extras.get('sweep', []) %}
+{% set margins_seen = [] %}
+{% for r in rows %}
+{% if r.fcf_margin not in margins_seen %}
+{% set _ = margins_seen.append(r.fcf_margin) %}
+{% endif %}
+{% endfor %}
+{% for m in margins_seen %}| {{ '{:.0%}'.format(m) }} | {% for y in [5,7,10] %}{% for r in rows %}{% if r.fcf_margin == m and r.years_to_terminal == y %}{% if r.required_growth_yoy %}{{ '{:.0%}'.format(r.required_growth_yoy) }}{% else %}—{% endif %}{% endif %}{% endfor %}{% if not loop.last %} | {% endif %}{% endfor %} |
+{% endfor %}
+{% endif %}
+
+---
+
+## Co-investors
+
+{{ coinvestors }}
+
+---
+
+{{ citations_md }}
