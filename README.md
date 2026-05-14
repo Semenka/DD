@@ -95,6 +95,11 @@ Add to your client's MCP config (`~/.claude.json`, `~/.codex/config.toml`, etc.)
 
 The intended workflow is: drop the deal memo and pitch deck PDFs into a Telegram chat with OpenClaw, ask Andrey-style ("analyze this deal" or similar), and receive a PDF back on the same channel a few minutes later.
 
+Verified end-to-end on 2026-05-15:
+- **PDF intake**: `openclaw agent --agent main` called `dd-agent__submit_deal` with `memo_path=memo.pdf`, deal created, company "Linear" extracted correctly.
+- **Report rendering**: 8-page, 74 KB PDF written to `data/reports/<deal_id>.pdf` via weasyprint.
+- **Telegram delivery**: `openclaw message` tool with `filePath=…linear_report.pdf` returned `ok=true messageId=10 chatId=148594943` — the PDF was delivered to the user's Telegram chat as a document attachment.
+
 This is wired through OpenClaw's `main` agent. The agent's instructions live in `~/.openclaw/workspace/TOOLS.md` under the "DD agent" heading and tell `main` to:
 
 1. Save Telegram PDF attachments to disk
