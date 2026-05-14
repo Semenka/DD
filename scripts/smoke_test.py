@@ -37,8 +37,11 @@ async def _run(args) -> int:
     from dd_agent.orchestrator import submit, _run_pipeline  # noqa: F401
     from dd_agent.state import DealStore
 
-    if not os.environ.get("OPENAI_API_KEY"):
-        log.error("OPENAI_API_KEY not set — copy .env.example to .env and fill it in")
+    import shutil
+    if not shutil.which(os.environ.get("DD_CODEX_BIN", "codex")):
+        log.error(
+            "codex CLI not on PATH. Install it: `npm install -g @openai/codex && codex login`"
+        )
         return 2
 
     memo_text = None

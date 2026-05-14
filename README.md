@@ -2,7 +2,7 @@
 
 Opinionated, evidence-first due diligence for private investment deals. Modeled after Elad Gil's investing style: pattern-match against history, ask the unfair question, prize inflection over TAM, evidence over opinion.
 
-Powered by **OpenAI GPT-5.5** for all subagent reasoning and synthesis.
+Powered by **OpenAI GPT-5.5** via the **`codex` CLI** for all subagent reasoning and synthesis. No API key needed — codex uses your existing ChatGPT login.
 
 Exposed as an **MCP server** so OpenClaw, Claude Code, Cursor, Codex, or any MCP-capable agent can submit deals and pull reports.
 
@@ -22,11 +22,16 @@ Synthesis page: **Kill Shot**, **1-line bet** (≤20 words), and **Beliefs Requi
 Requires Python 3.11+. Uses [uv](https://github.com/astral-sh/uv) (recommended) or pip.
 
 ```bash
+# 1. codex CLI (one-time): authenticates with your ChatGPT account
+npm install -g @openai/codex
+codex login
+
+# 2. Python deps
 git clone https://github.com/semenka/DD.git
 cd DD
 uv venv && source .venv/bin/activate
 uv pip install -e ".[photo]"
-cp .env.example .env       # fill in OPENAI_API_KEY, TAVILY_API_KEY
+cp .env.example .env       # optional: TAVILY_API_KEY for higher-quality web search
 ```
 
 Photo classifier and podcast-transcription deps are optional extras:
@@ -60,7 +65,7 @@ Add to your MCP config (`~/.claude.json` for Claude Code, OpenClaw equivalent):
     "dd-agent": {
       "command": "dd-agent",
       "args": ["serve"],
-      "env": { "OPENAI_API_KEY": "sk-...", "DD_MODEL": "gpt-5.5" }
+      "env": { "DD_MODEL": "gpt-5.5" }
     }
   }
 }
@@ -102,7 +107,7 @@ ingestion → DealContext → orchestrator
                               └→ synthesis call → report renderer
 ```
 
-Each subagent runs in its own scoped OpenAI GPT-5.5 chat completion. Each pulls retrieval snippets from Elad's blog / High Growth Handbook / podcast transcripts via BM25 and grounds claims in citations. Configure model via `DD_MODEL` (default `gpt-5.5`) and a faster model for ingestion/photo trait scoring via `DD_MODEL_FAST` (default `gpt-5.5-mini`).
+Each subagent runs in its own scoped `codex exec` subprocess against GPT-5.5. No API key — codex uses your ChatGPT login. Each pulls retrieval snippets from Elad's blog / High Growth Handbook / podcast transcripts via BM25 and grounds claims in citations. Configure model via `DD_MODEL` (default `gpt-5.5`) and a faster model for ingestion/photo trait scoring via `DD_MODEL_FAST` (default `gpt-5.5-mini`). Override the codex binary path via `DD_CODEX_BIN`.
 
 ## License
 

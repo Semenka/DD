@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import base64
 import io
 import json
 import logging
@@ -45,16 +44,50 @@ def _load_seed() -> list[dict]:
     return json.loads(SEED_PATH.read_text()).get("founders", [])
 
 
-async def _fetch_photo(url: str) -> bytes | None:
+UA = "DD-Agent/0.1 (https://github.com/semenka/DD; corpus build)"
+
+
+async def _resolve_via_wiki(client: httpx.AsyncClient, name: str) -> str | None:
+    """Resolve a person name to their Wikipedia originalimage URL."""
+    title = name.replace(" ", "_")
     try:
-        async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
-            r = await client.get(url, headers={"User-Agent": "DD-Agent corpus build"})
-            if r.status_code != 200 or len(r.content) < 500:
-                return None
-            return r.content
-    except Exception as exc:
-        log.warning("fetch failed %s: %s", url, exc)
+        r = await client.get(
+            f"https://en.wikipedia.org/api/rest_v1/page/summary/{title}",
+            headers={"User-Agent": UA, "Accept": "application/json"},
+        )
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        orig = (data.get("originalimage") or {}).get("source")
+        if orig:
+            return orig
+        thumb = (data.get("thumbnail") or {}).get("source")
+        return thumb
+    except Exception:
         return None
+
+
+async def _fetch_photo(client: httpx.AsyncClient, url: str | None, name: str) -> bytes | None:
+    """Fetch a photo. Try the provided URL first, then resolve via Wikipedia REST API."""
+    candidates: list[str] = []
+    if url:
+        candidates.append(url)
+    resolved = await _resolve_via_wiki(client, name)
+    if resolved and resolved not in candidates:
+        candidates.append(resolved)
+    if not candidates:
+        return None
+    for candidate in candidates:
+        try:
+            r = await client.get(candidate, headers={"User-Agent": UA})
+        except Exception as exc:
+            log.debug("fetch error %s: %s", candidate, exc)
+            continue
+        if r.status_code == 200 and len(r.content) >= 500:
+            log.debug("fetched %s (%d bytes)", candidate, len(r.content))
+            return r.content
+        log.debug("fetch %s returned %s (%d bytes)", candidate, r.status_code, len(r.content))
+    return None
 
 
 def _embed(image_bytes: bytes, app) -> np.ndarray | None:
@@ -75,47 +108,45 @@ def _embed(image_bytes: bytes, app) -> np.ndarray | None:
 
 
 async def _llm_traits(name: str, image_bytes: bytes) -> dict[str, float]:
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        return {t: 3.0 for t in TRAITS}
+    """Score 5 traits via GPT-5.5 vision (codex CLI). Returns 3.0 across the
+    board on any failure."""
+    import sys
+    import tempfile
+    sys.path.insert(0, str(ROOT / "src"))
     try:
-        from openai import AsyncOpenAI
+        from dd_agent.modules._llm import codex_exec, CodexUnavailableError, FAST_MODEL
     except ImportError:
         return {t: 3.0 for t in TRAITS}
 
-    client = AsyncOpenAI(api_key=api_key)
-    model = os.environ.get("DD_MODEL_FAST", os.environ.get("DD_MODEL", "gpt-5.5"))
-    img_b64 = base64.standard_b64encode(image_bytes).decode("ascii")
     prompt = (
         f"You are scoring a single photo of {name} (a founder of a 1B+ company). "
-        "Rate the image on 5 traits, each 1-5 scale, based ONLY on what is visible: "
-        "resilience, intensity, warmth, presentation_polish, energy. "
-        "Output ONLY a JSON object: {\"resilience\": int, \"intensity\": int, "
-        "\"warmth\": int, \"presentation_polish\": int, \"energy\": int}."
+        "Rate the image on 5 traits, each 1-5 integer scale, based ONLY on what "
+        "is visible: resilience, intensity, warmth, presentation_polish, energy. "
+        "Output ONLY a JSON object with those 5 keys and integer 1-5 values. "
+        "No preamble, no markdown fences."
     )
+    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+        tmp.write(image_bytes)
+        tmp_path = tmp.name
     try:
-        resp = await client.chat.completions.create(
-            model=model,
-            max_completion_tokens=200,
-            response_format={"type": "json_object"},
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {
-                            "url": f"data:image/jpeg;base64,{img_b64}",
-                        }},
-                    ],
-                }
-            ],
-        )
+        text = await codex_exec(prompt, model=FAST_MODEL, images=[tmp_path], timeout=120.0)
+    except CodexUnavailableError:
+        log.warning("codex CLI not installed — trait scoring defaults to 3.0 for %s", name)
+        return {t: 3.0 for t in TRAITS}
     except Exception as exc:
         log.warning("LLM trait scoring failed for %s: %s", name, exc)
         return {t: 3.0 for t in TRAITS}
-    text = resp.choices[0].message.content or ""
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+
     try:
-        data = json.loads(text.strip().strip("`").replace("json\n", "", 1))
+        s = text.strip().strip("`")
+        if s.lower().startswith("json"):
+            s = s[4:].lstrip()
+        data = json.loads(s)
         return {t: float(data.get(t, 3.0)) for t in TRAITS}
     except Exception:
         return {t: 3.0 for t in TRAITS}
@@ -144,25 +175,31 @@ async def main():
         seed = seed[: args.limit]
 
     rows: list[dict] = []
-    for f in seed:
-        log.info("processing %s (%s)", f["name"], f["company"])
-        img = await _fetch_photo(f["photo_url"])
-        if not img:
-            log.warning("  skipped — could not fetch photo")
-            continue
-        emb = _embed(img, app)
-        if emb is None:
-            log.warning("  skipped — no face detected")
-            continue
-        traits = {t: 3.0 for t in TRAITS} if args.no_llm_traits else await _llm_traits(f["name"], img)
-        rows.append({
-            "founder_id": f["founder_id"],
-            "name": f["name"],
-            "company": f["company"],
-            "photo_url": f["photo_url"],
-            "embedding": emb.tolist(),
-            **traits,
-        })
+    async with httpx.AsyncClient(timeout=25.0, follow_redirects=True) as client:
+        for f in seed:
+            log.info("processing %s (%s)", f["name"], f["company"])
+            img = await _fetch_photo(client, f.get("photo_url"), f["name"])
+            if not img:
+                log.warning("  skipped — could not fetch photo")
+                continue
+            emb = _embed(img, app)
+            if emb is None:
+                log.warning("  skipped — no face detected")
+                continue
+            traits = (
+                {t: 3.0 for t in TRAITS}
+                if args.no_llm_traits
+                else await _llm_traits(f["name"], img)
+            )
+            rows.append({
+                "founder_id": f["founder_id"],
+                "name": f["name"],
+                "company": f["company"],
+                "photo_url": f.get("photo_url"),
+                "embedding": emb.tolist(),
+                **traits,
+            })
+            await asyncio.sleep(0.3)  # be polite to Wikimedia
 
     if not rows:
         log.error("no founders successfully embedded — parquet not written")

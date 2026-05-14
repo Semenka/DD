@@ -16,8 +16,9 @@ def test_heuristic_extracts_arr():
     assert data["metrics"]["arr_usd"] == 3_500_000
 
 
-async def test_normalize_without_api_key_falls_back_to_heuristic(monkeypatch):
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+async def test_normalize_without_codex_falls_back_to_heuristic(monkeypatch):
+    """If the codex CLI is unavailable, normalize must still succeed via heuristics."""
+    monkeypatch.setenv("DD_CODEX_BIN", "/nonexistent/codex-binary-for-test")
     ctx = await norm.normalize(
         memo_text="Gamma Labs raising $10M seed. ARR $500K.",
         deck_text=None,

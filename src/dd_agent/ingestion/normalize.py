@@ -1,8 +1,8 @@
 """Normalize raw ingested text into a typed DealContext.
 
-Uses OpenAI GPT-5.5 to extract structured fields from free-form deal memo,
-deck text, and scraped website. Falls back to regex heuristics if the LLM
-call fails.
+Uses OpenAI GPT-5.5 via the `codex` CLI to extract structured fields from
+free-form deal memo, deck text, and scraped website. Falls back to regex
+heuristics if the LLM call fails or codex is unavailable.
 """
 
 from __future__ import annotations
@@ -50,13 +50,13 @@ SCHEMA:
 
 INPUTS:
 === MEMO ===
-{memo}
+<<MEMO>>
 
 === DECK ===
-{deck}
+<<DECK>>
 
 === WEBSITE ===
-{website}
+<<WEBSITE>>
 """
 
 
@@ -102,33 +102,21 @@ async def normalize(
 
 
 async def _extract_with_llm(memo: str, deck: str, site: str) -> dict | None:
-    """Call OpenAI GPT-5.5 to extract structured fields. Returns None on any failure."""
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        return None
-    try:
-        from openai import AsyncOpenAI
-    except ImportError:
-        return None
-
-    client = AsyncOpenAI(api_key=api_key)
-    model = os.environ.get("DD_MODEL_FAST", os.environ.get("DD_MODEL", "gpt-5.5"))
-    prompt = _EXTRACT_PROMPT.format(
-        memo=_trim(memo, 30_000),
-        deck=_trim(deck, 30_000),
-        website=_trim(site, 20_000),
+    """Call GPT-5.5 via codex CLI to extract structured fields. Returns None on failure."""
+    from ..modules._llm import codex_exec, CodexUnavailableError, FAST_MODEL
+    prompt = (
+        _EXTRACT_PROMPT
+        .replace("<<MEMO>>", _trim(memo, 30_000))
+        .replace("<<DECK>>", _trim(deck, 30_000))
+        .replace("<<WEBSITE>>", _trim(site, 20_000))
     )
     try:
-        resp = await client.chat.completions.create(
-            model=model,
-            max_completion_tokens=4000,
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
-        )
-        text = resp.choices[0].message.content or ""
-        return _parse_json_block(text)
+        text = await codex_exec(prompt, model=FAST_MODEL, timeout=180.0)
+    except CodexUnavailableError:
+        return None
     except Exception:
         return None
+    return _parse_json_block(text)
 
 
 def _trim(s: str, n: int) -> str:
