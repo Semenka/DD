@@ -14,6 +14,9 @@ data/deals.db-shm
 data/deals.db-wal
 data/cache/
 data/edgar_filings/
+data/reports/
+data/transcripts/
+data/smoke_test.db
 *.onnx
 ~/.insightface/
 build/
