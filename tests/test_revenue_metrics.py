@@ -54,3 +54,24 @@ def test_arr_takes_priority_over_mrr_when_both_present():
 def test_no_revenue_metric_means_no_metrics_key():
     data = norm._extract_heuristic("Some company doing things.", "", "")
     assert "metrics" not in data
+
+
+def test_approximation_markers_dont_break_arr_extraction():
+    """`ARR: ~$8M`, `ARR: approx $8M`, `ARR: about $8M` — the approximation
+    marker between `:` and `$` should not block extraction. This was the
+    bug that hid Revoy's ARR figure from the pipeline."""
+    for memo in [
+        "**ARR:** ~$8M from pilot fleets",
+        "ARR: approx $8M",
+        "ARR: about $8M",
+        "ARR ≈ $8M",
+        "**ARR:** $8M",  # the plain case still works
+    ]:
+        data = norm._extract_heuristic(memo, "", "")
+        assert data["metrics"]["arr_usd"] == 8_000_000, f"failed for: {memo!r}"
+
+
+def test_markdown_emphasis_around_arr_label():
+    """**ARR:** style labels should work too."""
+    data = norm._extract_heuristic("**ARR:** $12.5M growing 100% YoY", "", "")
+    assert data["metrics"]["arr_usd"] == 12_500_000

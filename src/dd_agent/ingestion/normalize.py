@@ -182,11 +182,14 @@ def _parse_json_block(text: str) -> dict | None:
 # --- heuristic fallback --------------------------------------------------------
 
 _CAPITALIZED_BIGRAM = re.compile(r"\b([A-Z][a-zA-Z]+(?:\s[A-Z][a-zA-Z]+){0,2})\b")
+# Approximation markers (~, ≈, ca., approx., about) allowed between the label
+# and the value. Also tolerate markdown emphasis (* / **) around the label.
+_APPROX = r"(?:\s|~|≈|approx\.?|about|ca\.?|roughly|\*)*"
 _ARR_RE = re.compile(
     r"(?:"
-    r"\$?\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?\s*ARR\b"  # $5M ARR
+    r"\$?\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?\s*ARR\b"                            # $5M ARR / ~$5M ARR
     r"|"
-    r"\bARR\s*[:\-]?\s*\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?"  # ARR: $500K
+    r"\bARR\b" + _APPROX + r"[:\-]?" + _APPROX + r"\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?"  # ARR: $500K / ARR: ~$8M
     r")",
     re.IGNORECASE,
 )
@@ -194,7 +197,7 @@ _MRR_RE = re.compile(
     r"(?:"
     r"\$?\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?\s*MRR\b"
     r"|"
-    r"\bMRR\s*[:\-]?\s*\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?"
+    r"\bMRR\b" + _APPROX + r"[:\-]?" + _APPROX + r"\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?"
     r")",
     re.IGNORECASE,
 )
