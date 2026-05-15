@@ -177,7 +177,13 @@ def _markdown_to_html(text: str) -> str:
         elif line.startswith("---"):
             out.append("<hr>")
         else:
-            out.append(f"<p>{_inline(line)}</p>")
+            # Reference rows in the bibliography start with `[N] ...` — give
+            # the paragraph an id so inline citations can scroll-to it.
+            m = re.match(r"^\[(\d+)\]\s", line)
+            if m:
+                out.append(f'<p id="ref-{m.group(1)}">{_inline(line)}</p>')
+            else:
+                out.append(f"<p>{_inline(line)}</p>")
 
     flush_table()
     flush_list()
@@ -196,5 +202,11 @@ def _inline(text: str) -> str:
         r'<a href="\2" target="_blank" rel="noopener">\1</a>',
         text,
     )
-    text = re.sub(r"\[(\d+)\]", r'<sup class="ref">[\1]</sup>', text)
+    # Inline citation markers like [3] become anchor links to #ref-3 in the
+    # References section, so the reader can click them and land on the source.
+    text = re.sub(
+        r"\[(\d+)\]",
+        r'<sup class="ref"><a href="#ref-\1">[\1]</a></sup>',
+        text,
+    )
     return text

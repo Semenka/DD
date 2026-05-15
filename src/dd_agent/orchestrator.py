@@ -22,6 +22,7 @@ from pathlib import Path
 
 from .citations import Citation, CitationBook
 from .context import DealContext
+from .delivery import DeliverTo, deliver, extract_one_line_bet
 from .ingestion.normalize import normalize
 from .ingestion.pdf import extract_text as extract_pdf
 from .ingestion.website import fetch_site
@@ -51,8 +52,12 @@ async def submit(
     deck_path: str | None = None,
     company_url: str | None = None,
     founder_names: list[str] | None = None,
+    deliver_to: dict[str, Any] | None = None,
 ) -> SubmittedDeal:
-    """Create a deal record and kick off the DD pipeline in the background."""
+    """Create a deal record and kick off the DD pipeline in the background.
+
+    If `deliver_to` is set, dd-agent itself sends the finished report via
+    `openclaw message send` — caller doesn't need to poll."""
     record = await store.create()
     asyncio.create_task(_run_pipeline(
         store=store,
@@ -62,6 +67,7 @@ async def submit(
         deck_path=deck_path,
         company_url=company_url,
         founder_names=founder_names,
+        deliver_to=DeliverTo.from_dict(deliver_to),
     ))
     return SubmittedDeal(deal_id=record.deal_id, company_name=None, status=record.status.value)
 
@@ -75,14 +81,22 @@ async def _run_pipeline(
     deck_path: str | None,
     company_url: str | None,
     founder_names: list[str] | None,
+    deliver_to: DeliverTo | None = None,
 ) -> None:
     try:
         await store.update_status(deal_id, status=DealStatus.INGESTING,
                                   phase="ingesting inputs", progress_pct=5)
 
-        # If memo came as a PDF, extract its text. memo_text wins when both are set.
+        # If memo came as a file path, read it. memo_text wins when both are set.
+        # PDFs go through pypdf; .md / .txt / .markdown are read directly.
         if not memo_text and memo_path and Path(memo_path).exists():
-            memo_text = await asyncio.to_thread(extract_pdf, memo_path)
+            ext = Path(memo_path).suffix.lower()
+            if ext == ".pdf":
+                memo_text = await asyncio.to_thread(extract_pdf, memo_path)
+            else:
+                memo_text = await asyncio.to_thread(
+                    Path(memo_path).read_text, encoding="utf-8", errors="ignore",
+                )
 
         deck_text = None
         if deck_path and Path(deck_path).exists():
@@ -141,6 +155,7 @@ async def _run_pipeline(
         html = render_html(markdown_text=md, deal_context=ctx)
 
         pdf_path = await _write_pdf(deal_id=deal_id, html=html)
+        html_path = await _write_html(deal_id=deal_id, html=html)
 
         await store.save_report(
             deal_id=deal_id,
@@ -149,6 +164,16 @@ async def _run_pipeline(
             citations=merged["citations"].to_list(),
             pdf_path=pdf_path,
         )
+
+        if deliver_to is not None:
+            await _deliver_async(
+                deliver_to=deliver_to,
+                deal_id=deal_id,
+                company=ctx.company_name,
+                markdown=md,
+                html_path=html_path,
+                pdf_path=pdf_path,
+            )
     except Exception as exc:  # noqa: BLE001
         log.exception("pipeline failed: %s", exc)
         await store.update_status(deal_id, status=DealStatus.FAILED,
@@ -168,6 +193,45 @@ async def _write_pdf(*, deal_id: str, html: str) -> str | None:
     except Exception as exc:  # noqa: BLE001
         log.warning("PDF rendering failed for %s: %s", deal_id, exc)
         return None
+
+
+async def _write_html(*, deal_id: str, html: str) -> str | None:
+    """Mirror the HTML to disk so we can attach it to outbound deliveries."""
+    out_dir = Path(os.environ.get("DD_DATA_DIR", "./data")) / "reports"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{deal_id}.html"
+    try:
+        await asyncio.to_thread(out_path.write_text, html, "utf-8")
+        return str(out_path.resolve())
+    except Exception as exc:  # noqa: BLE001
+        log.warning("HTML write failed for %s: %s", deal_id, exc)
+        return None
+
+
+async def _deliver_async(
+    *,
+    deliver_to: DeliverTo,
+    deal_id: str,
+    company: str | None,
+    markdown: str,
+    html_path: str | None,
+    pdf_path: str | None,
+) -> None:
+    one_line = extract_one_line_bet(markdown)
+    result = await deliver(
+        deliver_to=deliver_to,
+        deal_id=deal_id,
+        company=company,
+        markdown_path=None,
+        html_path=html_path,
+        pdf_path=pdf_path,
+        one_line_bet=one_line,
+    )
+    if result.get("ok"):
+        log.info("deal %s delivered via %s/%s: %s",
+                 deal_id, deliver_to.channel, deliver_to.account, result)
+    else:
+        log.warning("deal %s delivery failed: %s", deal_id, result)
 
 
 async def _safe(coro, label: str):

@@ -45,13 +45,19 @@ class CitationBook:
         return None if i is None else i + 1
 
     def render_markdown(self) -> str:
+        """Render references in markdown form.
+
+        References start with `[N] Title — *web*`. The HTML renderer recognizes
+        this pattern at the start of a line and adds `id="ref-N"` to the
+        wrapping element so inline `[n]` links can jump to it.
+        """
         lines = ["## References", ""]
         if not self.citations:
             lines.append(
                 "*No web sources were available during this run.* Inline `[n]` markers in the "
                 "report reflect the LLM's stated need for citations, but no live search results "
-                "were returned. Set `TAVILY_API_KEY` (free tier ~1k/mo) in `.env` to enable a "
-                "reliable web search backend, then re-submit."
+                "were returned. Set `PERPLEXITY_API_KEY` or `GEMINI_API_KEY` in `.env` "
+                "(both free tiers exist) to enable a real web search backend, then re-submit."
             )
             return "\n".join(lines)
         for i, c in enumerate(self.citations, 1):

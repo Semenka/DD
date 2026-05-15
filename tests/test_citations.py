@@ -26,11 +26,12 @@ def test_render_markdown_includes_all():
 
 def test_empty_book_still_renders_references_header():
     """When the book is empty, the rendered markdown still shows a References
-    header with a clear placeholder so readers know why [n] markers in the body
+    header plus a placeholder telling the reader why [n] markers in the body
     don't resolve to anything."""
     out = CitationBook().render_markdown()
     assert "## References" in out
-    assert "TAVILY_API_KEY" in out
+    # The placeholder points at the search backend env vars users can set.
+    assert "PERPLEXITY_API_KEY" in out or "GEMINI_API_KEY" in out
 
 
 def test_to_list_indices():

@@ -61,8 +61,26 @@ class NoticeCoSnapshot:
 
 @dataclass
 class Metrics:
+    # ARR / MRR — the recurring-revenue numbers we want most. Use `arr_quality`
+    # to flag when a stated "ARR" is actually GMV, gross sales, pilot revenue,
+    # or annualized one-time transactions.
     arr_usd: float | None = None
     mrr_usd: float | None = None
+    arr_quality: str | None = None         # "recurring_subscription" |
+                                           # "annualized_contracts" |
+                                           # "annualized_pilots" |
+                                           # "annualized_transactions" |
+                                           # "gmv_or_take_rate" |
+                                           # "one_time_hardware" |
+                                           # "unclear"
+    arr_quality_notes: str | None = None   # 1-2 sentences explaining the call
+    # Alternative revenue lenses captured separately so we don't conflate them.
+    gmv_usd: float | None = None           # gross merchandise value (marketplace flow)
+    gross_revenue_usd: float | None = None # top-line, before COGS / refunds
+    net_revenue_usd: float | None = None   # after refunds / give-backs
+    transaction_volume_usd: float | None = None  # one-time or non-recurring sales
+    take_rate: float | None = None         # for marketplaces, fraction of GMV the company keeps
+    # Operating + cohort fields
     growth_rate_yoy: float | None = None   # 0.0–10.0 (e.g. 2.5 = 250%)
     burn_usd_monthly: float | None = None
     runway_months: float | None = None
@@ -70,6 +88,7 @@ class Metrics:
     customer_count: int | None = None
     nps: float | None = None
     churn_monthly: float | None = None
+    net_retention: float | None = None     # NRR — 1.10 = 110%
 
 
 @dataclass

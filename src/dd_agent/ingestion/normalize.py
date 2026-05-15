@@ -23,6 +23,29 @@ CRITICAL: `company_name` is required if it appears anywhere in the inputs. Look 
 like "Company: X", "# X — ...", "X is the ...", "We are X", "Investment Memo — X". If a \
 single company name appears in the memo header or first paragraph, use it.
 
+REVENUE EXTRACTION — Be exhaustive. Look for ANY of these phrases and slot them correctly:
+  - "ARR", "annual recurring revenue" → arr_usd
+  - "MRR", "monthly recurring revenue" → mrr_usd
+  - "GMV", "gross merchandise value", "GTV", "transaction volume" → gmv_usd
+  - "gross revenue", "top-line revenue", "billings" → gross_revenue_usd
+  - "net revenue", "net sales" → net_revenue_usd
+  - "TPV", "payment volume" → transaction_volume_usd
+  - "take rate", "rake" (percentage) → take_rate (as decimal: 12% → 0.12)
+  - "NRR", "net retention", "net revenue retention" → net_retention (as decimal)
+  - Annualized run-rates derived from monthly numbers should populate the corresponding
+    annualized field, with a note in arr_quality_notes.
+
+ARR QUALITY — if the memo states ARR or implies it, set `arr_quality` to ONE of:
+  - "recurring_subscription"  → genuine SaaS subscription contracts
+  - "annualized_contracts"    → multi-year customer commits, billed annually
+  - "annualized_pilots"       → paid pilots, not yet renewed
+  - "annualized_transactions" → one-time sales annualized (NOT real ARR)
+  - "gmv_or_take_rate"        → marketplace volume, not company revenue (NOT real ARR)
+  - "one_time_hardware"       → hardware sales, not recurring (NOT real ARR)
+  - "unclear"                 → can't tell from the inputs
+And write a 1-2 sentence `arr_quality_notes` justification. NEVER invent — only call it
+recurring_subscription if the memo explicitly says "subscription" or "recurring".
+
 For monetary values, return USD as a number (no string suffixes). $5M → 5000000. $200K → 200000.
 For growth rates, return YoY as a decimal where 2.5 = 250%.
 
@@ -42,10 +65,16 @@ SCHEMA:
   ],
   "metrics": {
     "arr_usd": float | null, "mrr_usd": float | null,
-    "growth_rate_yoy": float | null,  // 2.5 = 250%
+    "arr_quality": str | null,           // see ARR QUALITY taxonomy above
+    "arr_quality_notes": str | null,
+    "gmv_usd": float | null, "gross_revenue_usd": float | null,
+    "net_revenue_usd": float | null, "transaction_volume_usd": float | null,
+    "take_rate": float | null,           // 12% → 0.12
+    "growth_rate_yoy": float | null,     // 2.5 = 250%
     "burn_usd_monthly": float | null, "runway_months": float | null,
     "gross_margin": float | null, "customer_count": int | null,
-    "nps": float | null, "churn_monthly": float | null
+    "nps": float | null, "churn_monthly": float | null,
+    "net_retention": float | null        // 110% → 1.10
   },
   "existing_investors": [
     {"name": str, "type": str | null, "round": str | null, "is_lead": bool}
@@ -155,10 +184,47 @@ def _parse_json_block(text: str) -> dict | None:
 _CAPITALIZED_BIGRAM = re.compile(r"\b([A-Z][a-zA-Z]+(?:\s[A-Z][a-zA-Z]+){0,2})\b")
 _ARR_RE = re.compile(
     r"(?:"
-    r"\$?\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?\s*(?:ARR|MRR)"  # $5M ARR
+    r"\$?\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?\s*ARR\b"  # $5M ARR
     r"|"
-    r"(?:ARR|MRR)\s*[:\-]?\s*\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?"  # ARR $500K
+    r"\bARR\s*[:\-]?\s*\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?"  # ARR: $500K
     r")",
+    re.IGNORECASE,
+)
+_MRR_RE = re.compile(
+    r"(?:"
+    r"\$?\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?\s*MRR\b"
+    r"|"
+    r"\bMRR\s*[:\-]?\s*\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?"
+    r")",
+    re.IGNORECASE,
+)
+# Look for any of: GMV, GTV, "gross merchandise value", "transaction volume"
+_GMV_RE = re.compile(
+    r"(?:"
+    r"\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?\s*(?:GMV|GTV|gross merchandise value|transaction volume|payment volume)\b"
+    r"|"
+    r"\b(?:GMV|GTV|gross merchandise value|transaction volume|payment volume|TPV)\s*[:\-]?\s*\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?"
+    r")",
+    re.IGNORECASE,
+)
+_GROSS_REV_RE = re.compile(
+    r"(?:"
+    r"\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?\s*(?:gross revenue|top-line|billings)\b"
+    r"|"
+    r"\b(?:gross revenue|top[\s\-]?line revenue|billings)\s*[:\-]?\s*\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?"
+    r")",
+    re.IGNORECASE,
+)
+_NET_REV_RE = re.compile(
+    r"\b(?:net revenue|net sales)\s*[:\-]?\s*\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?",
+    re.IGNORECASE,
+)
+_TAKE_RATE_RE = re.compile(
+    r"\btake[\s\-]?rate\s*[:\-]?\s*([0-9]+(?:\.[0-9]+)?)\s*%",
+    re.IGNORECASE,
+)
+_NRR_RE = re.compile(
+    r"\b(?:NRR|net retention|net revenue retention)\s*[:\-]?\s*([0-9]+(?:\.[0-9]+)?)\s*%",
     re.IGNORECASE,
 )
 _RAISE_RE = re.compile(r"raising\s*[:\-]?\s*\$\s*([0-9]+(?:\.[0-9]+)?)\s*([KkMmBb])?", re.IGNORECASE)
@@ -192,13 +258,33 @@ def _extract_heuristic(memo: str, deck: str, site: str) -> dict:
     blob = "\n".join([memo, deck, site])
     company = _guess_company(memo, deck, site)
 
-    arr = None
-    m = _ARR_RE.search(blob)
+    def _money(pat: re.Pattern[str], text: str) -> float | None:
+        m = pat.search(text)
+        if not m:
+            return None
+        num = m.group(1) or (m.group(3) if m.lastindex and m.lastindex >= 3 else None)
+        suffix = m.group(2) or (m.group(4) if m.lastindex and m.lastindex >= 4 else None)
+        if num is None:
+            return None
+        return float(num) * _scale(suffix)
+
+    arr = _money(_ARR_RE, blob)
+    mrr = _money(_MRR_RE, blob)
+    gmv = _money(_GMV_RE, blob)
+    gross_rev = _money(_GROSS_REV_RE, blob)
+    # _NET_REV_RE has only 2 groups so the generic _money fn miscounts; handle directly.
+    net_rev = None
+    m = _NET_REV_RE.search(blob)
     if m:
-        num = m.group(1) or m.group(3)
-        suffix = m.group(2) or m.group(4)
-        if num is not None:
-            arr = float(num) * _scale(suffix)
+        net_rev = float(m.group(1)) * _scale(m.group(2))
+    take_rate = None
+    m = _TAKE_RATE_RE.search(blob)
+    if m:
+        take_rate = float(m.group(1)) / 100.0
+    nrr = None
+    m = _NRR_RE.search(blob)
+    if m:
+        nrr = float(m.group(1)) / 100.0
 
     ask = None
     m = _RAISE_RE.search(blob)
@@ -223,8 +309,28 @@ def _extract_heuristic(memo: str, deck: str, site: str) -> dict:
         result["company_name"] = company
     if stage:
         result["stage"] = stage
+    metrics: dict = {}
     if arr is not None:
-        result["metrics"] = {"arr_usd": arr}
+        metrics["arr_usd"] = arr
+    if mrr is not None:
+        metrics["mrr_usd"] = mrr
+        # If only MRR is known, also surface annualized — flagged as such in notes.
+        if arr is None:
+            metrics["arr_usd"] = mrr * 12
+            metrics["arr_quality"] = "unclear"
+            metrics["arr_quality_notes"] = "annualized from stated MRR; needs verification"
+    if gmv is not None:
+        metrics["gmv_usd"] = gmv
+    if gross_rev is not None:
+        metrics["gross_revenue_usd"] = gross_rev
+    if net_rev is not None:
+        metrics["net_revenue_usd"] = net_rev
+    if take_rate is not None:
+        metrics["take_rate"] = take_rate
+    if nrr is not None:
+        metrics["net_retention"] = nrr
+    if metrics:
+        result["metrics"] = metrics
     if ask is not None:
         result["ask_amount_usd"] = ask
     if valuation is not None:

@@ -9,6 +9,24 @@ You are writing the TRACTION section. Apply Principles 1, 5, 6, 7.
 ### Headline metrics
 A short bulleted block with the hard numbers: ARR/MRR (in USD), growth rate YoY, gross margin, customer count, net retention if available. Cite the source (memo, deck, normalized context).
 
+### Revenue quality — what is this number, really?
+
+This subsection is **mandatory and goes before the public-comp benchmark**. Apply Principle 5 — assess what the headline revenue figure actually is. The DealContext provides `metrics.arr_quality` (one of: `recurring_subscription`, `annualized_contracts`, `annualized_pilots`, `annualized_transactions`, `gmv_or_take_rate`, `one_time_hardware`, `unclear`) and `metrics.arr_quality_notes`. Use both, plus your own reading of the memo, to write:
+
+1. **Stated**: what the memo or deck calls the revenue figure (verbatim if possible).
+2. **Actual**: your judgment of what it really is. Distinguish:
+   - True recurring subscription ARR (multi-year SaaS contracts)
+   - Annualized contract value (signed but not yet renewed)
+   - Annualized pilots (paid trials — not real ARR)
+   - Annualized one-time transactions (hardware sales, project work — not real ARR)
+   - GMV / transaction volume (marketplace flow — company keeps only the take rate)
+   - Net revenue (after refunds/give-backs)
+   - Unclear (memo doesn't disambiguate; mark `(speculation)` and ask for the specific KPIs needed)
+3. **Implied real ARR**: if the headline figure is GMV or annualized one-time, estimate what the *real* recurring revenue is. For marketplaces: `GMV × take_rate` if take_rate is known, else flag the gap. For pilots: usually 30-60% of pilots convert to renewable contracts on a 12-18 month lag — say so, mark as speculation if we can't see the conversion data.
+4. **Diligence questions** (numbered list, 3-5 items): the specific data the agent would need to firm up the call — e.g. "monthly cohort retention by contract age", "renewal rate on pilot conversions", "% of revenue that's contractually committed for the next 12 months".
+
+If the memo's headline number turns out to NOT be real ARR, the public-comp benchmark and reverse DCF that follow should be computed against the *real ARR estimate*, not the headline. Flag clearly which number you used.
+
 ### Public-comp benchmark
 Markdown table comparing the company's growth rate to the public-SaaS comp distribution (p25/p50/p75) supplied in `<comp_distribution>`. Show: tickers in the distribution, the company's percentile rank, and 3 closest public comps by growth+sector. Apply Principle 6.
 

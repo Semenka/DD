@@ -23,11 +23,25 @@ def test_markdown_table():
     assert "<td>1</td>" in html
 
 
-def test_markdown_refs_become_sup():
+def test_markdown_refs_become_anchor_links():
+    """Inline [n] becomes a clickable anchor pointing at #ref-n in the
+    bibliography. This is the 'active links' the user asked for."""
     md = "Claim foo [1] and bar [2]."
     html = _markdown_to_html(md)
-    assert '<sup class="ref">[1]</sup>' in html
-    assert '<sup class="ref">[2]</sup>' in html
+    assert '<sup class="ref"><a href="#ref-1">[1]</a></sup>' in html
+    assert '<sup class="ref"><a href="#ref-2">[2]</a></sup>' in html
+
+
+def test_reference_lines_get_anchor_ids():
+    """A line like `[1] Some title — *web*` in the References section gets
+    id="ref-1" so anchor links can jump to it."""
+    md = "## References\n\n[1] [Title One](https://x.com/a) — *web*\n[2] Title Two — *elad*\n"
+    html = _markdown_to_html(md)
+    assert 'id="ref-1"' in html
+    assert 'id="ref-2"' in html
+    # And the inline `[1]` inside the reference body should still be a link
+    # (so the same line links to itself, which is benign).
+    assert '<a href="#ref-1">' in html
 
 
 def test_render_markdown_smoke():

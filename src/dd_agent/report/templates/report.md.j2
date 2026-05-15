@@ -47,6 +47,25 @@
 
 {{ traction }}
 
+### Revenue metrics (raw data)
+
+{% set m = ctx.metrics %}
+```
+ARR:                 {% if m.arr_usd %}${{ '{:,.0f}'.format(m.arr_usd) }}{% else %}—{% endif %}
+MRR:                 {% if m.mrr_usd %}${{ '{:,.0f}'.format(m.mrr_usd) }}{% else %}—{% endif %}
+ARR quality:         {{ m.arr_quality or '—' }}{% if m.arr_quality_notes %}
+    notes:           {{ m.arr_quality_notes }}{% endif %}
+GMV:                 {% if m.gmv_usd %}${{ '{:,.0f}'.format(m.gmv_usd) }}{% else %}—{% endif %}
+Gross revenue:       {% if m.gross_revenue_usd %}${{ '{:,.0f}'.format(m.gross_revenue_usd) }}{% else %}—{% endif %}
+Net revenue:         {% if m.net_revenue_usd %}${{ '{:,.0f}'.format(m.net_revenue_usd) }}{% else %}—{% endif %}
+Transaction volume:  {% if m.transaction_volume_usd %}${{ '{:,.0f}'.format(m.transaction_volume_usd) }}{% else %}—{% endif %}
+Take rate:           {% if m.take_rate is not none %}{{ '{:.1%}'.format(m.take_rate) }}{% else %}—{% endif %}
+Growth (YoY):        {% if m.growth_rate_yoy is not none %}{{ '{:.0%}'.format(m.growth_rate_yoy) }}{% else %}—{% endif %}
+Gross margin:        {% if m.gross_margin is not none %}{{ '{:.0%}'.format(m.gross_margin) }}{% else %}—{% endif %}
+Net retention:       {% if m.net_retention is not none %}{{ '{:.0%}'.format(m.net_retention) }}{% else %}—{% endif %}
+Customer count:      {{ m.customer_count or '—' }}
+```
+
 {% if extras.get('reverse_dcf') %}
 ### Reverse DCF — model output (raw)
 

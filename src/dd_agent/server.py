@@ -44,6 +44,7 @@ async def submit_deal(
     deck_path: str | None = None,
     company_url: str | None = None,
     founder_names: list[str] | None = None,
+    deliver_to: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Submit a deal for due diligence.
 
@@ -55,8 +56,17 @@ async def submit_deal(
       - company_url: the company website URL
       - founder_names: list of founder names (used when not extractable from inputs)
 
-    Returns immediately with a `deal_id`. The DD pipeline runs in the background;
-    poll get_report_status(deal_id) until phase=='done', then call get_report.
+    Optional `deliver_to` makes dd-agent send the finished report itself when
+    the pipeline completes (so the caller doesn't have to poll):
+        {"channel": "telegram", "account": "cosmo", "target": "148594943",
+         "format": "html", "summary_line": "<optional>"}
+    channel is required; account defaults to "default"; format defaults to
+    "html" with active citation links (also accepts "pdf" or "markdown").
+
+    Returns immediately with a `deal_id`. The DD pipeline runs in the background.
+    If deliver_to was set, dd-agent will send the report on completion via
+    `openclaw message send`. Without deliver_to, poll get_report_status(deal_id)
+    until phase=='done', then call get_report.
     """
     await _store.init()
     if not any([memo_text, memo_path, deck_path, company_url]):
@@ -68,8 +78,13 @@ async def submit_deal(
         deck_path=deck_path,
         company_url=company_url,
         founder_names=founder_names,
+        deliver_to=deliver_to,
     )
-    return {"deal_id": submitted.deal_id, "status": submitted.status}
+    return {
+        "deal_id": submitted.deal_id,
+        "status": submitted.status,
+        "auto_delivery": bool(deliver_to),
+    }
 
 
 @mcp.tool()
