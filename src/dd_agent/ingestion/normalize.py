@@ -181,6 +181,40 @@ def _parse_json_block(text: str) -> dict | None:
 
 # --- heuristic fallback --------------------------------------------------------
 
+
+# Context windows around an ARR figure. Used by the heuristic to classify
+# revenue quality even when the LLM doesn't fill arr_quality.
+_QUALITY_KEYWORDS = {
+    "annualized_pilots":      ("pilot", "trial", "POC", "proof of concept", "letter of intent"),
+    "one_time_hardware":      ("hardware sale", "hardware units", "device sales", "unit sales"),
+    "gmv_or_take_rate":       ("GMV", "marketplace", "transaction volume", "take rate", "take-rate", "TPV"),
+    "annualized_contracts":   ("signed contract", "multi-year contract", "annual contract", "ACV"),
+    "annualized_transactions": ("one-time", "one time", "non-recurring", "project work", "services revenue"),
+    "recurring_subscription": ("recurring", "subscription", "SaaS", "monthly subscription", "annual subscription"),
+}
+
+
+def _classify_arr_quality(blob: str, arr_match_span: tuple[int, int]) -> tuple[str | None, str | None]:
+    """Look at the ±200-char window around the ARR figure and classify.
+
+    Returns (quality_label, notes). Both None if no signal."""
+    start = max(0, arr_match_span[0] - 200)
+    end = min(len(blob), arr_match_span[1] + 200)
+    window = blob[start:end].lower()
+    for label, keywords in _QUALITY_KEYWORDS.items():
+        for kw in keywords:
+            if kw.lower() in window:
+                # Find a short excerpt for the note
+                idx = window.find(kw.lower())
+                snippet_start = max(0, idx - 40)
+                snippet_end = min(len(window), idx + 80)
+                snippet = window[snippet_start:snippet_end].strip().replace("\n", " ")
+                return label, f'heuristic classification — saw "...{snippet}..." near the ARR figure'
+    return None, None
+
+
+
+
 _CAPITALIZED_BIGRAM = re.compile(r"\b([A-Z][a-zA-Z]+(?:\s[A-Z][a-zA-Z]+){0,2})\b")
 # Approximation markers (~, ≈, ca., approx., about) allowed between the label
 # and the value. Also tolerate markdown emphasis (* / **) around the label.
@@ -271,7 +305,14 @@ def _extract_heuristic(memo: str, deck: str, site: str) -> dict:
             return None
         return float(num) * _scale(suffix)
 
+    # ARR + quality classification from surrounding context
     arr = _money(_ARR_RE, blob)
+    arr_quality: str | None = None
+    arr_quality_notes: str | None = None
+    if arr is not None:
+        m_arr = _ARR_RE.search(blob)
+        if m_arr:
+            arr_quality, arr_quality_notes = _classify_arr_quality(blob, m_arr.span())
     mrr = _money(_MRR_RE, blob)
     gmv = _money(_GMV_RE, blob)
     gross_rev = _money(_GROSS_REV_RE, blob)
@@ -315,6 +356,9 @@ def _extract_heuristic(memo: str, deck: str, site: str) -> dict:
     metrics: dict = {}
     if arr is not None:
         metrics["arr_usd"] = arr
+        if arr_quality:
+            metrics["arr_quality"] = arr_quality
+            metrics["arr_quality_notes"] = arr_quality_notes
     if mrr is not None:
         metrics["mrr_usd"] = mrr
         # If only MRR is known, also surface annualized — flagged as such in notes.

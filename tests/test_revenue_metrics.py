@@ -75,3 +75,33 @@ def test_markdown_emphasis_around_arr_label():
     """**ARR:** style labels should work too."""
     data = norm._extract_heuristic("**ARR:** $12.5M growing 100% YoY", "", "")
     assert data["metrics"]["arr_usd"] == 12_500_000
+
+
+def test_arr_quality_classified_as_pilots_when_pilot_context_present():
+    """Revoy regression case: '**ARR:** ~$8M (pilot fleets, two paying customers)'
+    should set arr_quality=annualized_pilots, not silently leave it null."""
+    memo = "**ARR:** ~$8M (pilot fleets, two paying customers as of Q3 2025)"
+    data = norm._extract_heuristic(memo, "", "")
+    assert data["metrics"]["arr_usd"] == 8_000_000
+    assert data["metrics"]["arr_quality"] == "annualized_pilots"
+    assert "pilot" in data["metrics"]["arr_quality_notes"].lower()
+
+
+def test_arr_quality_classified_as_recurring_when_subscription_context():
+    memo = "ARR: $14.8M (recurring software subscription, billed annually)"
+    data = norm._extract_heuristic(memo, "", "")
+    assert data["metrics"]["arr_quality"] == "recurring_subscription"
+
+
+def test_arr_quality_classified_as_gmv_when_marketplace_context():
+    memo = "ARR: $30M from marketplace volume with 10% take-rate"
+    data = norm._extract_heuristic(memo, "", "")
+    assert data["metrics"]["arr_quality"] == "gmv_or_take_rate"
+
+
+def test_arr_quality_none_when_no_context_keywords():
+    """Plain `ARR: $5M` with no nearby context keywords leaves quality null
+    so the LLM extraction layer can still fill it later."""
+    data = norm._extract_heuristic("ARR: $5M.", "", "")
+    assert data["metrics"]["arr_usd"] == 5_000_000
+    assert "arr_quality" not in data["metrics"]
