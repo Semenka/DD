@@ -38,12 +38,14 @@ def render_markdown(
     coinvestors: str,
     citations: CitationBook,
     extras: dict | None = None,
+    bessemer_memo: str | None = None,
 ) -> str:
     env = _env()
     template = env.get_template("report.md.j2")
     return template.render(
         ctx=ctx,
         synthesis=synthesis,
+        bessemer_memo=bessemer_memo,
         market=market,
         founders=founders,
         traction=traction,

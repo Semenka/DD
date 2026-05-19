@@ -20,8 +20,21 @@
   h4 { font-size: 1rem; margin-top: 1.2rem; }
   hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
   blockquote {
-    margin: 1rem 0; padding: 0.6rem 1rem; border-left: 3px solid var(--accent);
+    margin: 1.2rem 0; padding: 0.7rem 1.1rem;
+    border-left: 4px solid var(--accent);
     background: var(--code-bg); font-style: italic; color: var(--muted);
+    position: relative;
+  }
+  blockquote::before {
+    content: "Partner aside";
+    display: block;
+    font-size: 0.72rem;
+    font-style: normal;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
   }
   code {
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;

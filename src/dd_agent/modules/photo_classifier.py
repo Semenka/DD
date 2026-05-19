@@ -33,6 +33,7 @@ class FounderMatch:
     company: str
     photo_url: str | None
     similarity: float
+    cohort: str | None = None   # public_sp500_nasdaq | yc_top_100 | unicorn_private
     traits: dict[str, float] = field(default_factory=dict)
 
 
@@ -43,6 +44,7 @@ class PhotoAnalysis:
     nearest: list[FounderMatch]
     trait_scores: dict[str, float]
     available: bool
+    cohort_breakdown: dict[str, int] = field(default_factory=dict)  # cohort → count in nearest-k
     note: str | None = None
 
     def to_dict(self) -> dict:
@@ -51,6 +53,7 @@ class PhotoAnalysis:
             "photo_source": self.photo_source,
             "nearest": [m.__dict__ for m in self.nearest],
             "trait_scores": self.trait_scores,
+            "cohort_breakdown": self.cohort_breakdown,
             "available": self.available,
             "note": self.note,
         }
@@ -118,7 +121,7 @@ async def analyze_founder_photo(
     founder_name: str,
     photo_url: str | None = None,
     photo_bytes: bytes | None = None,
-    k: int = 5,
+    k: int = 10,
 ) -> PhotoAnalysis:
     """Run the full pipeline. Returns PhotoAnalysis with available=False if any
     step fails (no exception)."""
@@ -172,17 +175,22 @@ async def analyze_founder_photo(
     sims = corpus_emb @ embedding
     order = np.argsort(-sims)[:k]
     matches: list[FounderMatch] = []
+    cohort_counts: dict[str, int] = {}
     weighted = {t: 0.0 for t in TRAITS}
     weight_sum = 0.0
     for i in order:
         row = corpus[int(i)]
         sim = float(sims[int(i)])
         traits = {t: float(row.get(t, 0.0)) for t in TRAITS}
+        cohort = row.get("cohort")  # may be missing on older parquets
+        if cohort:
+            cohort_counts[str(cohort)] = cohort_counts.get(str(cohort), 0) + 1
         matches.append(FounderMatch(
             founder_id=str(row.get("founder_id", "?")),
             company=str(row.get("company", "?")),
             photo_url=row.get("photo_url"),
             similarity=sim,
+            cohort=str(cohort) if cohort else None,
             traits=traits,
         ))
         w = max(sim, 0.0)
@@ -199,5 +207,6 @@ async def analyze_founder_photo(
         photo_source=photo_url or "(inline)",
         nearest=matches,
         trait_scores={t: round(weighted[t], 2) for t in TRAITS},
+        cohort_breakdown=cohort_counts,
         available=True,
     )

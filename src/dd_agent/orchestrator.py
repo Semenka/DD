@@ -23,6 +23,8 @@ from pathlib import Path
 from .citations import Citation, CitationBook
 from .context import DealContext
 from .delivery import DeliverTo, deliver, extract_one_line_bet
+from .ingestion import clipper as clipper_mod
+from .ingestion import screenshot_deck as deck_mod
 from .ingestion.normalize import normalize
 from .ingestion.pdf import extract_text as extract_pdf
 from .ingestion.website import fetch_site
@@ -88,19 +90,45 @@ async def _run_pipeline(
                                   phase="ingesting inputs", progress_pct=5)
 
         # If memo came as a file path, read it. memo_text wins when both are set.
-        # PDFs go through pypdf; .md / .txt / .markdown are read directly.
+        # PDFs go through pypdf; .md / .txt / .markdown route through the
+        # Obsidian Web Clipper parser first (which surfaces an embedded deck
+        # URL if one is present).
+        clipping: clipper_mod.ClippingContext | None = None
         if not memo_text and memo_path and Path(memo_path).exists():
             ext = Path(memo_path).suffix.lower()
             if ext == ".pdf":
                 memo_text = await asyncio.to_thread(extract_pdf, memo_path)
             else:
-                memo_text = await asyncio.to_thread(
+                raw = await asyncio.to_thread(
                     Path(memo_path).read_text, encoding="utf-8", errors="ignore",
                 )
+                clipping = clipper_mod.parse(raw)
+                if clipping is not None:
+                    memo_text = clipping.body_text
+                    # Promote the clipping's source URL when the caller didn't
+                    # provide one.
+                    if not company_url and clipping.source_url:
+                        company_url = clipping.source_url
+                else:
+                    memo_text = raw
 
         deck_text = None
+        deck_capture: deck_mod.DeckCapture | None = None
+        # 1) Explicit deck_path PDF, if given.
         if deck_path and Path(deck_path).exists():
             deck_text = await asyncio.to_thread(extract_pdf, deck_path)
+        # 2) Hosted deck URL discovered in a clipping → screenshot + OCR.
+        elif clipping is not None and clipping.deck_url:
+            await store.update_status(
+                deal_id, phase=f"capturing deck from {clipping.deck_url}", progress_pct=10,
+            )
+            deck_capture = await deck_mod.capture(clipping.deck_url, deal_id=deal_id)
+            if deck_capture.available:
+                deck_text = deck_capture.text
+                log.info("deck capture: %d slides, %d chars OCR'd",
+                         deck_capture.slide_count, len(deck_capture.text))
+            else:
+                log.info("deck capture unavailable: %s", deck_capture.note)
 
         site_text = None
         if company_url:
@@ -142,6 +170,36 @@ async def _run_pipeline(
 
         synth = await _synthesize(ctx, merged, base_system)
 
+        # 6th call: long-form Bessemer-style memo. Reads everything above
+        # (subagent outputs + extras + synthesis) and produces the narrative
+        # memo that appears at the top of the final report. Best-effort; if
+        # this call fails the rest of the report still ships.
+        try:
+            bessemer_memo = await _synthesize_bessemer(ctx, merged, synth, base_system)
+            merged["bessemer_memo"] = bessemer_memo
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Bessemer memo synthesis failed: %s", exc)
+            merged["bessemer_memo"] = None
+
+        extras = merged.get("extras", {})
+        if deck_capture is not None:
+            extras["deck_capture"] = {
+                "available": deck_capture.available,
+                "deck_url": deck_capture.deck_url,
+                "slide_count": deck_capture.slide_count,
+                "gated": deck_capture.gated,
+                "note": deck_capture.note,
+                "screenshot_paths": deck_capture.screenshot_paths,
+            }
+        if clipping is not None:
+            extras["clipping"] = {
+                "source_url": clipping.source_url,
+                "title": clipping.title,
+                "author": clipping.author,
+                "clipped_at": clipping.clipped_at,
+                "deck_url": clipping.deck_url,
+            }
+
         md = render_markdown(
             ctx=ctx,
             synthesis=synth,
@@ -150,7 +208,8 @@ async def _run_pipeline(
             traction=merged["traction"],
             coinvestors=merged["coinvestors"],
             citations=merged["citations"],
-            extras=merged.get("extras", {}),
+            extras=extras,
+            bessemer_memo=merged.get("bessemer_memo"),
         )
         html = render_html(markdown_text=md, deal_context=ctx)
 
@@ -320,6 +379,50 @@ One of: "Pass", "Pass for now — revisit at X milestone", "Lean in — proceed 
 
 Do not invent new facts. Synthesize from the sections you are given.
 """
+
+
+_BESSEMER_PROMPT_PATH = "modules/bessemer_prompt.md"
+
+
+async def _synthesize_bessemer(
+    ctx: DealContext, merged: dict, synth: str, base_system: str,
+) -> str:
+    """6th LLM call — produces the long-form Bessemer-style memo that
+    appears at the top of the report (between Synthesis and the analyst
+    sections)."""
+    body_parts: list[str] = [
+        f"# Deal: {ctx.company_name}",
+        f"Sector: {ctx.sector or 'unknown'} | Stage: {ctx.stage or 'unknown'} | "
+        f"Ask: ${ctx.ask_amount_usd or 'unknown'} at ${ctx.ask_valuation_usd or 'unknown'}",
+    ]
+    if ctx.founders:
+        body_parts.append("Founders: " + ", ".join(f.name for f in ctx.founders))
+
+    body_parts.append(f"\n---\n\n## Synthesis (already written)\n\n{synth}")
+    body_parts.append(f"\n---\n\n## Market\n\n{merged.get('market', '')}")
+    body_parts.append(f"\n---\n\n## Founders\n\n{merged.get('founders', '')}")
+    body_parts.append(f"\n---\n\n## Traction\n\n{merged.get('traction', '')}")
+    body_parts.append(f"\n---\n\n## Co-investors\n\n{merged.get('coinvestors', '')}")
+
+    extras = merged.get("extras") or {}
+    if extras:
+        import json as _json
+        # Trim very long arrays before serializing.
+        serializable: dict = {}
+        for k, v in extras.items():
+            if isinstance(v, list) and len(v) > 20:
+                serializable[k] = v[:20]
+            else:
+                serializable[k] = v
+        body_parts.append(
+            "\n---\n\n## Structured extras (numbers, rounds, photo cohort, etc.)\n\n"
+            "```json\n" + _json.dumps(serializable, indent=2, default=str) + "\n```"
+        )
+
+    system_prompt = load_prompt(_BESSEMER_PROMPT_PATH)
+    system = f"{base_system}\n\n---\n\n{system_prompt}"
+    user = "\n".join(body_parts)
+    return await render_section(system=system, user=user, max_tokens=5500)
 
 
 async def _synthesize(ctx: DealContext, merged: dict, base_system: str) -> str:

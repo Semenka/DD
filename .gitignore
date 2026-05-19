@@ -21,3 +21,4 @@ data/smoke_test.db
 ~/.insightface/
 build/
 dist/
+data/deck_shots/

@@ -28,3 +28,29 @@ def test_normalize_unit_vector():
 
 def test_traits_constant_matches_module():
     assert set(pc.TRAITS) == {"resilience", "intensity", "warmth", "presentation_polish", "energy"}
+
+
+def test_founder_match_carries_cohort():
+    """The FounderMatch dataclass surfaces cohort so downstream code can group
+    nearest matches by public_sp500_nasdaq / yc_top_100 / unicorn_private."""
+    m = pc.FounderMatch(
+        founder_id="x", company="Stripe", photo_url=None, similarity=0.81,
+        cohort="yc_top_100",
+    )
+    assert m.cohort == "yc_top_100"
+
+
+def test_photo_analysis_cohort_breakdown_defaults_empty():
+    pa = pc.PhotoAnalysis(
+        founder_name="X", photo_source="", nearest=[],
+        trait_scores={t: 0.0 for t in pc.TRAITS}, available=False,
+    )
+    assert pa.cohort_breakdown == {}
+    assert "cohort_breakdown" in pa.to_dict()
+
+
+def test_default_k_is_10():
+    """k bumped from 5 → 10 with the larger 500-founder corpus."""
+    import inspect
+    sig = inspect.signature(pc.analyze_founder_photo)
+    assert sig.parameters["k"].default == 10
