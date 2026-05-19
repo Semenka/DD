@@ -285,9 +285,10 @@ async def resolve_photo(client: httpx.AsyncClient, founder: dict) -> bytes | Non
     """Try multiple sources to find a usable founder headshot.
 
     1. Wikipedia REST API summary endpoint (originalimage)
-    2. Company `/about` and `/team` pages for an `<img>` whose alt-text or
-       surrounding text matches the founder name
+    2. Company `/about`, `/team`, `/leadership` etc. for an `<img>` whose
+       alt-text matches the founder's last name
     3. Web search for "{name} headshot"
+    4. Perplexity ask_grounded for an explicit photo URL
     """
     name = founder["name"]
     # 1) Wikipedia
@@ -301,7 +302,46 @@ async def resolve_photo(client: httpx.AsyncClient, founder: dict) -> bytes | Non
             return img
     # 3) Web search fallback
     img = await _web_search_photo(client, founder)
-    return img
+    if img:
+        return img
+    # 4) Last-resort: ask Perplexity for the URL of a public photo. Very
+    #    effective for founders whose Wikipedia page redirects and whose
+    #    company site is gated/SPA.
+    return await _perplexity_photo(client, founder)
+
+
+async def _perplexity_photo(client: httpx.AsyncClient, founder: dict) -> bytes | None:
+    """Ask Perplexity for a public photo URL and try to fetch it."""
+    try:
+        from dd_agent.data_sources.search import ask_grounded
+    except ImportError:
+        return None
+    name = founder["name"]
+    company = founder.get("company") or ""
+    prompt = (
+        f"Find the URL of a single public headshot photo of {name} "
+        f"(the founder/CEO of {company}). Prefer Wikipedia, Crunchbase, "
+        f"the company's official press page, Bloomberg, Forbes, or "
+        f"TechCrunch. The URL must end in .jpg, .jpeg, .png, or .webp "
+        f"AND be a direct image link (not an HTML page that contains the "
+        f"image). Output ONLY the URL, nothing else. If no public direct "
+        f"image URL exists, output exactly 'NONE'."
+    )
+    try:
+        ans = await ask_grounded(prompt, max_sources=3, max_tokens=200)
+    except Exception:
+        return None
+    if not ans or not ans.text:
+        return None
+    text = ans.text.strip().strip("`").strip()
+    # Extract the first http(s) URL ending in an image extension.
+    m = re.search(
+        r"(https?://[^\s\)\]\"']+\.(?:jpe?g|png|webp))",
+        text, re.IGNORECASE,
+    )
+    if not m:
+        return None
+    return await _fetch_image(client, m.group(1))
 
 
 async def _wikipedia_photo(client: httpx.AsyncClient, name: str) -> bytes | None:
