@@ -542,37 +542,62 @@ async def main_async(args) -> int:
     rows: list[dict] = list(existing.values())
     fetched = 0
     skipped = 0
-    async with httpx.AsyncClient(timeout=25.0, follow_redirects=True) as client:
-        for i, f in enumerate(founders, 1):
-            fid = f["founder_id"]
-            if fid in existing and not args.rebuild:
-                skipped += 1
-                continue
+
+    # Concurrency strategy:
+    # - Photo lookup is HTTP-bound (Wikipedia, company team page, grounded
+    #   LLM) — safe to parallelize with asyncio.Semaphore.
+    # - Face embedding via InsightFace is CPU-bound and not thread-safe;
+    #   we serialize that via an asyncio.Lock around _embed().
+    # - Trait scoring (when enabled) is HTTP-bound — concurrent.
+    concurrency = int(os.environ.get("DD_BUILD_CONCURRENCY", "8"))
+    sem = asyncio.Semaphore(concurrency)
+    embed_lock = asyncio.Lock()
+    rows_lock = asyncio.Lock()
+
+    todo: list[tuple[int, dict]] = []
+    for i, f in enumerate(founders, 1):
+        if f["founder_id"] in existing and not args.rebuild:
+            skipped += 1
+            continue
+        todo.append((i, f))
+
+    log.info("processing %d new founders (skip %d existing) with concurrency=%d",
+             len(todo), skipped, concurrency)
+
+    async def process_one(idx: int, f: dict, client: httpx.AsyncClient) -> None:
+        nonlocal fetched
+        async with sem:
             log.info("[%d/%d] %s (%s) — %s",
-                     i, len(founders), f["name"], f["company"], f.get("cohort", "?"))
+                     idx, len(founders), f["name"], f["company"], f.get("cohort", "?"))
             img = await resolve_photo(client, f)
             if not img:
-                log.warning("  could not fetch photo")
-                continue
-            emb = _embed(img, app)
+                log.warning("  [%d] could not fetch photo for %s", idx, f["name"])
+                return
+            async with embed_lock:
+                emb = _embed(img, app)
             if emb is None:
-                log.warning("  no face detected")
-                continue
+                log.warning("  [%d] no face detected for %s", idx, f["name"])
+                return
             if args.no_llm_traits:
                 traits = {t: 3.0 for t in TRAITS}
             else:
                 traits = await _gemini_traits(f["name"], f["company"], img)
-            rows.append({
-                "founder_id": fid,
-                "name": f["name"],
-                "company": f["company"],
-                "cohort": f.get("cohort", "unicorn_private"),
-                "photo_url": f.get("photo_url"),
-                "embedding": emb.tolist(),
-                **traits,
-            })
-            fetched += 1
-            await asyncio.sleep(0.25)  # be polite
+            async with rows_lock:
+                rows.append({
+                    "founder_id": f["founder_id"],
+                    "name": f["name"],
+                    "company": f["company"],
+                    "cohort": f.get("cohort", "unicorn_private"),
+                    "photo_url": f.get("photo_url"),
+                    "embedding": emb.tolist(),
+                    **traits,
+                })
+                fetched += 1
+                if fetched % 10 == 0:
+                    log.info("  >>> %d new founders embedded so far", fetched)
+
+    async with httpx.AsyncClient(timeout=25.0, follow_redirects=True) as client:
+        await asyncio.gather(*(process_one(i, f, client) for i, f in todo))
 
     if not rows:
         log.error("no founders successfully embedded")
