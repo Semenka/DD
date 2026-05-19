@@ -595,6 +595,19 @@ async def main_async(args) -> int:
                 fetched += 1
                 if fetched % 10 == 0:
                     log.info("  >>> %d new founders embedded so far", fetched)
+                # Incremental checkpoint every 20 new founders so progress
+                # survives a crash / Ctrl-C. Writes the full parquet, not a
+                # patch — pandas/parquet has no append API. ~5ms write.
+                if fetched % 20 == 0:
+                    try:
+                        snapshot = pd.DataFrame(rows).drop_duplicates(
+                            subset=["founder_id"], keep="last",
+                        )
+                        snapshot.to_parquet(OUT_PATH, index=False)
+                        log.info("  >>> checkpoint: parquet snapshot saved (%d rows)",
+                                 len(snapshot))
+                    except Exception as exc:  # noqa: BLE001
+                        log.warning("checkpoint write failed: %s", exc)
 
     async with httpx.AsyncClient(timeout=25.0, follow_redirects=True) as client:
         await asyncio.gather(*(process_one(i, f, client) for i, f in todo))
