@@ -288,7 +288,8 @@ async def resolve_photo(client: httpx.AsyncClient, founder: dict) -> bytes | Non
     2. Company `/about`, `/team`, `/leadership` etc. for an `<img>` whose
        alt-text matches the founder's last name
     3. Web search for "{name} headshot"
-    4. Perplexity ask_grounded for an explicit photo URL
+    4. Grounded LLM lookup (cascades through openclaw→perplexity→gemini per
+       data_sources.search.ask_grounded) for an explicit photo URL
     """
     name = founder["name"]
     # 1) Wikipedia
@@ -304,14 +305,15 @@ async def resolve_photo(client: httpx.AsyncClient, founder: dict) -> bytes | Non
     img = await _web_search_photo(client, founder)
     if img:
         return img
-    # 4) Last-resort: ask Perplexity for the URL of a public photo. Very
+    # 4) Last-resort: ask a grounded LLM for the URL of a public photo. Very
     #    effective for founders whose Wikipedia page redirects and whose
-    #    company site is gated/SPA.
-    return await _perplexity_photo(client, founder)
+    #    company site is gated/SPA. Routes through the configured search
+    #    cascade (default openclaw→gemini, so quota-safe).
+    return await _grounded_photo_lookup(client, founder)
 
 
-async def _perplexity_photo(client: httpx.AsyncClient, founder: dict) -> bytes | None:
-    """Ask Perplexity for a public photo URL and try to fetch it."""
+async def _grounded_photo_lookup(client: httpx.AsyncClient, founder: dict) -> bytes | None:
+    """Ask the configured grounded-search backend for a public photo URL."""
     try:
         from dd_agent.data_sources.search import ask_grounded
     except ImportError:
