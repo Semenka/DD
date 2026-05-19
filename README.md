@@ -36,16 +36,28 @@ dd-agent accepts any of:
 
 ## Search backends
 
-dd-agent uses a 4-tier search cascade. Configure any one in `.env`:
+dd-agent uses a 4-tier cascade — configure any one in `.env` and the agent picks the first that's available:
 
-| Backend | Env var | Why |
-|---|---|---|
-| **Perplexity** (recommended) | `PERPLEXITY_API_KEY` | Search + grounded synthesis in one call. Best for market sizing and funding rounds — the LLM reads pages and returns cited facts directly. |
-| **Gemini** with Google Search grounding | `GEMINI_API_KEY` | Equivalent capability via Google's search index. |
-| Tavily | `TAVILY_API_KEY` | Classic search index, URL list only. |
-| DuckDuckGo HTML | (none) | Last-resort, frequently rate-limited. |
+| Tier | Backend | Env var | Notes |
+|------|---------|---------|-------|
+| 1 | **Perplexity Sonar** | `PERPLEXITY_API_KEY` | Search + grounded synthesis in one call. Best for market sizing and funding rounds. |
+| 2 | **Gemini with Google Search grounding** | `GEMINI_API_KEY` | Same capability via Google's index. Model selectable via `DD_GEMINI_MODEL`. |
+| 3 | Tavily | `TAVILY_API_KEY` | Classic search index — URL list only, no synthesis. |
+| 4 | DuckDuckGo HTML | (none) | Last-resort, frequently rate-limited. |
 
-The cascade falls through in this order. With Perplexity configured, the Revoy smoke test produced 76 citations + 2 funding rounds + analyst figures for trucking electrification TAM. Without it, 0/0/none.
+With Perplexity configured, the Revoy smoke test produced 76 citations + 2 funding rounds + analyst TAM figures. Without it, 0/0/none.
+
+**Gemini model selector** (`DD_GEMINI_MODEL`):
+
+| Value | Why |
+|-------|-----|
+| `gemini-2.5-flash` *(default)* | Fast, cheap, grounding works. |
+| `gemini-3.5-flash` | Newer, slightly better synthesis quality. Same grounding interface. |
+| `gemini-3-pro-preview` / `gemini-3.1-pro-preview` | Highest quality, slower, higher cost. |
+
+**Other options available** (not yet wired into the cascade — open an issue or send a PR to enable):
+- `openclaw infer web search` — uses OpenClaw's bundled web-search providers if OpenClaw is installed. Zero extra API key.
+- Codex GPT-5.5 — no native search; consumes URLs handed to it by one of the backends above and synthesizes.
 
 ## Install
 
