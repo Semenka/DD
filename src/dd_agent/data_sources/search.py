@@ -1,23 +1,27 @@
-"""Web search with a four-tier cascade.
+"""Web search with a five-tier cascade.
 
-Priority order (highest signal first):
+Priority order (configurable via `DD_SEARCH_PREFERRED`, default order below):
 
-1. **Perplexity** Sonar — search + LLM synthesis in one call. Returns an
-   answer string plus source citations. Best for "research" queries.
-2. **Gemini grounding** — gemini-2.5-flash with the google_search tool.
+1. **OpenClaw infer-web** — shells out to `openclaw infer web search --provider
+   {gemini|perplexity|tavily|duckduckgo|...}`. Uses OpenClaw's already-
+   configured providers without dd-agent needing its own keys. Provider
+   selectable via `DD_OPENCLAW_SEARCH_PROVIDER` (default: gemini).
+2. **Perplexity** Sonar — direct Perplexity API call. Search + LLM synthesis
+   in one call. Returns an answer string plus source citations.
+3. **Gemini grounding** — direct Gemini API call with the google_search tool.
    Returns text plus a `groundingMetadata.groundingChunks` list of URLs.
-3. **Tavily** — classic search index.
-4. **DuckDuckGo HTML** — anonymous fallback (frequently rate-limited).
+4. **Tavily** — classic search index.
+5. **DuckDuckGo HTML** — anonymous fallback (frequently rate-limited).
 
 `web_search()` returns a list of `SearchResult{url, title, snippet, source}`
 from whichever tier responded first with non-empty results.
 
-`ask_grounded()` is a higher-level helper for the market subagent: it sends a
-single question and returns an answer string plus citations, suitable for TAM /
-competitor reasoning where the LLM needs to read across pages, not just
-collect URLs.
+`ask_grounded()` is a higher-level helper for synthesis queries: returns
+an answer string plus citations.
 
-Configure via env (any one of these is enough):
+Configure via env (any one is enough — the cascade falls through):
+    DD_OPENCLAW_SEARCH_PROVIDER  (default: gemini, options: gemini|perplexity|tavily|duckduckgo|exa|firecrawl|ollama)
+    DD_SEARCH_PREFERRED          (default: openclaw,perplexity,gemini,tavily,duckduckgo)
     PERPLEXITY_API_KEY
     GEMINI_API_KEY
     TAVILY_API_KEY
@@ -26,8 +30,10 @@ Configure via env (any one of these is enough):
 from __future__ import annotations
 
 import asyncio
+import json as _json
 import os
 import re
+import shutil
 from dataclasses import dataclass
 from urllib.parse import quote_plus, unquote, urlparse
 
@@ -53,30 +59,61 @@ class GroundedAnswer:
 # --- main entrypoints --------------------------------------------------------
 
 
+_DEFAULT_ORDER = ("openclaw", "perplexity", "gemini", "tavily", "duckduckgo")
+
+
+def _backend_order() -> tuple[str, ...]:
+    """User-overridable backend priority. DD_SEARCH_PREFERRED is a comma-
+    separated list of backend ids."""
+    raw = os.environ.get("DD_SEARCH_PREFERRED")
+    if not raw:
+        return _DEFAULT_ORDER
+    parts = tuple(p.strip().lower() for p in raw.split(",") if p.strip())
+    # Append any default backends the user omitted so we always fall back.
+    seen = set(parts)
+    rest = tuple(b for b in _DEFAULT_ORDER if b not in seen)
+    return parts + rest
+
+
+def _backend_available(backend: str) -> bool:
+    """Cheap availability check — env keys, binaries, etc."""
+    if backend == "openclaw":
+        return shutil.which("openclaw") is not None
+    if backend == "perplexity":
+        return bool(os.environ.get("PERPLEXITY_API_KEY"))
+    if backend == "gemini":
+        return bool(os.environ.get("GEMINI_API_KEY"))
+    if backend == "tavily":
+        return bool(os.environ.get("TAVILY_API_KEY"))
+    if backend == "duckduckgo":
+        return True
+    return False
+
+
 async def web_search(query: str, max_results: int = 8) -> list[SearchResult]:
-    """Return ranked URLs/snippets. Tries backends in cascade order."""
-    if os.environ.get("PERPLEXITY_API_KEY"):
+    """Return ranked URLs/snippets. Tries backends in DD_SEARCH_PREFERRED order
+    (default: openclaw → perplexity → gemini → tavily → duckduckgo)."""
+    for backend in _backend_order():
+        if not _backend_available(backend):
+            continue
         try:
-            out = await _perplexity_search(query, max_results)
-            if out:
-                return out
+            if backend == "openclaw":
+                out = await _openclaw_search(query, max_results)
+            elif backend == "perplexity":
+                out = await _perplexity_search(query, max_results)
+            elif backend == "gemini":
+                out = await _gemini_search(query, max_results)
+            elif backend == "tavily":
+                out = await _tavily(query, max_results)
+            elif backend == "duckduckgo":
+                out = await _duckduckgo(query, max_results)
+            else:
+                continue
         except Exception:
-            pass
-    if os.environ.get("GEMINI_API_KEY"):
-        try:
-            out = await _gemini_search(query, max_results)
-            if out:
-                return out
-        except Exception:
-            pass
-    if os.environ.get("TAVILY_API_KEY"):
-        try:
-            out = await _tavily(query, max_results)
-            if out:
-                return out
-        except Exception:
-            pass
-    return await _duckduckgo(query, max_results)
+            continue
+        if out:
+            return out
+    return []
 
 
 async def ask_grounded(
@@ -84,26 +121,23 @@ async def ask_grounded(
     max_sources: int = 10,
     max_tokens: int = 1500,
 ) -> GroundedAnswer | None:
-    """Return a single grounded answer + citations. Used by the market subagent
-    where we want the search backend to actually read pages and synthesize.
-
-    `max_tokens` controls the output size. Default 1500 is fine for "answer
-    one question with citations"; bump to 6000+ for "produce a long JSON list"
-    style calls (e.g. the founder-corpus generator)."""
-    if os.environ.get("PERPLEXITY_API_KEY"):
+    """Return a single grounded answer + citations. Honors DD_SEARCH_PREFERRED."""
+    for backend in _backend_order():
+        if not _backend_available(backend):
+            continue
         try:
-            out = await _perplexity_ask(question, max_sources, max_tokens=max_tokens)
-            if out:
-                return out
+            if backend == "openclaw":
+                out = await _openclaw_ask(question, max_sources)
+            elif backend == "perplexity":
+                out = await _perplexity_ask(question, max_sources, max_tokens=max_tokens)
+            elif backend == "gemini":
+                out = await _gemini_ask(question, max_sources)
+            else:
+                continue
         except Exception:
-            pass
-    if os.environ.get("GEMINI_API_KEY"):
-        try:
-            out = await _gemini_ask(question, max_sources)
-            if out:
-                return out
-        except Exception:
-            pass
+            continue
+        if out:
+            return out
     return None
 
 
@@ -111,6 +145,118 @@ async def search_many(queries: list[str], max_per: int = 5) -> dict[str, list[Se
     """Run several search queries in parallel."""
     results = await asyncio.gather(*(web_search(q, max_per) for q in queries))
     return dict(zip(queries, results))
+
+
+# --- OpenClaw infer-web -----------------------------------------------------
+
+OPENCLAW_BIN = os.environ.get("DD_OPENCLAW_BIN", "openclaw")
+# Default to gemini provider because: (a) it returns rich synthesized
+# content + citations in a single call, (b) the user already has GEMINI_API_KEY
+# configured, (c) OpenClaw's perplexity provider blows quotas fast since it's
+# shared with the rest of the OpenClaw ecosystem.
+OPENCLAW_PROVIDER = os.environ.get("DD_OPENCLAW_SEARCH_PROVIDER", "gemini")
+_OPENCLAW_TIMEOUT = float(os.environ.get("DD_OPENCLAW_TIMEOUT", "60"))
+
+
+async def _openclaw_run(args: list[str], timeout: float = _OPENCLAW_TIMEOUT) -> dict | None:
+    """Shell out to openclaw, parse the --json stdout, return the payload dict."""
+    proc = await asyncio.create_subprocess_exec(
+        OPENCLAW_BIN, *args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    try:
+        stdout, _stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    except asyncio.TimeoutError:
+        proc.kill()
+        await proc.wait()
+        return None
+    if proc.returncode != 0:
+        return None
+    try:
+        return _json.loads(stdout.decode("utf-8", errors="replace"))
+    except _json.JSONDecodeError:
+        return None
+
+
+def _openclaw_extract_result(payload: dict) -> dict | None:
+    """Pull the first non-empty result dict from an `infer web` payload."""
+    outputs = payload.get("outputs") or []
+    for o in outputs:
+        result = o.get("result") or {}
+        if result:
+            return result
+    return None
+
+
+async def _openclaw_search(query: str, max_results: int) -> list[SearchResult]:
+    """`openclaw infer web search` — returns content + citations."""
+    payload = await _openclaw_run([
+        "infer", "web", "search",
+        "--provider", OPENCLAW_PROVIDER,
+        "--query", query,
+        "--limit", str(max_results),
+        "--json",
+    ])
+    if not payload or not payload.get("ok"):
+        return []
+    result = _openclaw_extract_result(payload)
+    if not result:
+        return []
+    cits = result.get("citations") or []
+    out: list[SearchResult] = []
+    for c in cits[:max_results]:
+        url = c.get("url")
+        if not url:
+            continue
+        out.append(SearchResult(
+            url=url,
+            title=(c.get("title") or url)[:200],
+            snippet=(c.get("snippet") or c.get("description") or "")[:400],
+            source=f"openclaw/{result.get('provider', OPENCLAW_PROVIDER)}",
+        ))
+    return out
+
+
+async def _openclaw_ask(question: str, max_sources: int) -> GroundedAnswer | None:
+    """Same call as _openclaw_search, but we return the synthesized content
+    as a GroundedAnswer instead of just the URLs."""
+    payload = await _openclaw_run([
+        "infer", "web", "search",
+        "--provider", OPENCLAW_PROVIDER,
+        "--query", question,
+        "--limit", str(max_sources),
+        "--json",
+    ])
+    if not payload or not payload.get("ok"):
+        return None
+    result = _openclaw_extract_result(payload)
+    if not result:
+        return None
+    content = result.get("content") or ""
+    # OpenClaw wraps content in <<<EXTERNAL_UNTRUSTED_CONTENT id="...">>> markers
+    # for tool-output safety. Strip them — we trust the answer body itself.
+    content = re.sub(
+        r"<<<\s*EXTERNAL_UNTRUSTED_CONTENT[^>]*>>>\s*", "", content,
+    )
+    content = re.sub(r"<<<\s*END_EXTERNAL_UNTRUSTED_CONTENT[^>]*>>>\s*", "", content)
+    content = content.strip()
+    if not content:
+        return None
+    sources: list[SearchResult] = []
+    for c in (result.get("citations") or [])[:max_sources]:
+        url = c.get("url")
+        if not url:
+            continue
+        sources.append(SearchResult(
+            url=url, title=(c.get("title") or url)[:200], snippet="",
+            source=f"openclaw/{result.get('provider', OPENCLAW_PROVIDER)}",
+        ))
+    return GroundedAnswer(
+        text=content,
+        sources=sources,
+        source=f"openclaw/{result.get('provider', OPENCLAW_PROVIDER)}",
+    )
 
 
 # --- Perplexity --------------------------------------------------------------

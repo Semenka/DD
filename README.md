@@ -36,16 +36,17 @@ dd-agent accepts any of:
 
 ## Search backends
 
-dd-agent uses a 4-tier cascade — configure any one in `.env` and the agent picks the first that's available:
+dd-agent uses a 5-tier cascade — configure any backend and the agent picks the first that's available. Override the order with `DD_SEARCH_PREFERRED=gemini,duckduckgo` (any backend you list comes first; the rest stay as fallbacks).
 
-| Tier | Backend | Env var | Notes |
-|------|---------|---------|-------|
-| 1 | **Perplexity Sonar** | `PERPLEXITY_API_KEY` | Search + grounded synthesis in one call. Best for market sizing and funding rounds. |
-| 2 | **Gemini with Google Search grounding** | `GEMINI_API_KEY` | Same capability via Google's index. Model selectable via `DD_GEMINI_MODEL`. |
-| 3 | Tavily | `TAVILY_API_KEY` | Classic search index — URL list only, no synthesis. |
-| 4 | DuckDuckGo HTML | (none) | Last-resort, frequently rate-limited. |
+| Tier | Backend | Env / setup | Notes |
+|------|---------|------------|-------|
+| 1 | **`openclaw infer web search`** *(default)* | OpenClaw installed + `DD_OPENCLAW_SEARCH_PROVIDER` (default: `gemini`) | Reuses OpenClaw's configured providers — no extra key beyond what OpenClaw already has. Returns rich synthesized content + citations in one call. |
+| 2 | **Direct Perplexity Sonar** | `PERPLEXITY_API_KEY` | Direct Perplexity API. Search + grounded synthesis. |
+| 3 | **Direct Gemini grounding** | `GEMINI_API_KEY` + `DD_GEMINI_MODEL` (default `gemini-2.5-flash`) | Direct Gemini API with the Google Search tool. |
+| 4 | Tavily | `TAVILY_API_KEY` | URL list only. |
+| 5 | DuckDuckGo HTML | (none) | Last-resort, rate-limited. |
 
-With Perplexity configured, the Revoy smoke test produced 76 citations + 2 funding rounds + analyst TAM figures. Without it, 0/0/none.
+**Bypass Perplexity entirely:** set `DD_OPENCLAW_SEARCH_PROVIDER=gemini` (default) and don't set `PERPLEXITY_API_KEY`. The agent will route every search through OpenClaw → Gemini.
 
 **Gemini model selector** (`DD_GEMINI_MODEL`):
 
@@ -54,10 +55,6 @@ With Perplexity configured, the Revoy smoke test produced 76 citations + 2 fundi
 | `gemini-2.5-flash` *(default)* | Fast, cheap, grounding works. |
 | `gemini-3.5-flash` | Newer, slightly better synthesis quality. Same grounding interface. |
 | `gemini-3-pro-preview` / `gemini-3.1-pro-preview` | Highest quality, slower, higher cost. |
-
-**Other options available** (not yet wired into the cascade — open an issue or send a PR to enable):
-- `openclaw infer web search` — uses OpenClaw's bundled web-search providers if OpenClaw is installed. Zero extra API key.
-- Codex GPT-5.5 — no native search; consumes URLs handed to it by one of the backends above and synthesizes.
 
 ## Install
 

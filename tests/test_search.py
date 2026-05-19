@@ -74,8 +74,11 @@ async def test_web_search_falls_through_when_no_keys(monkeypatch):
 
 
 async def test_web_search_prefers_perplexity(monkeypatch):
-    """When PERPLEXITY_API_KEY is set, the cascade should call Perplexity first."""
+    """With openclaw unavailable + PERPLEXITY_API_KEY set, cascade calls Perplexity first."""
+    monkeypatch.delenv("DD_SEARCH_PREFERRED", raising=False)
     monkeypatch.setenv("PERPLEXITY_API_KEY", "pplx-test")
+    # shutil.which signature is `which(cmd, mode=..., path=...)` — accept any extras.
+    monkeypatch.setattr(s.shutil, "which", lambda cmd, *a, **kw: None)
     order: list[str] = []
 
     async def fake_pplx(query, max_results):
@@ -90,4 +93,62 @@ async def test_web_search_prefers_perplexity(monkeypatch):
     monkeypatch.setattr(s, "_duckduckgo", fake_ddg)
     results = await s.web_search("test", max_results=3)
     assert order == ["pplx"]
+    assert results[0].source == "perplexity"
+
+
+async def test_backend_order_default():
+    """Default cascade order: openclaw first, then perplexity, gemini, tavily, ddg."""
+    order = s._backend_order()
+    assert order == ("openclaw", "perplexity", "gemini", "tavily", "duckduckgo")
+
+
+async def test_backend_order_honors_env_override(monkeypatch):
+    """DD_SEARCH_PREFERRED lets the user reorder."""
+    monkeypatch.setenv("DD_SEARCH_PREFERRED", "gemini,duckduckgo")
+    order = s._backend_order()
+    # User-listed backends come first; any defaults the user omitted append after.
+    assert order[0] == "gemini"
+    assert order[1] == "duckduckgo"
+    # Make sure the omitted defaults are still reachable
+    assert "perplexity" in order
+
+
+async def test_web_search_prefers_openclaw_when_available(monkeypatch):
+    """openclaw is Tier 1: if the binary is present + a key would let it work,
+    web_search calls it first even with PERPLEXITY_API_KEY set."""
+    monkeypatch.delenv("DD_SEARCH_PREFERRED", raising=False)
+    monkeypatch.setenv("PERPLEXITY_API_KEY", "pplx-test")
+    monkeypatch.setattr(s.shutil, "which", lambda cmd, *a, **kw: "/usr/bin/openclaw")
+    calls: list[str] = []
+
+    async def fake_openclaw(query, max_results):
+        calls.append("openclaw")
+        return [s.SearchResult(url="https://o", title="o", snippet="", source="openclaw/gemini")]
+
+    async def fake_pplx(query, max_results):
+        calls.append("pplx")
+        return []
+
+    monkeypatch.setattr(s, "_openclaw_search", fake_openclaw)
+    monkeypatch.setattr(s, "_perplexity_search", fake_pplx)
+    results = await s.web_search("test", max_results=3)
+    assert calls == ["openclaw"]
+    assert results[0].source.startswith("openclaw")
+
+
+async def test_web_search_falls_through_on_empty_results(monkeypatch):
+    """When the first backend returns [], cascade tries the next."""
+    monkeypatch.delenv("DD_SEARCH_PREFERRED", raising=False)
+    monkeypatch.setenv("PERPLEXITY_API_KEY", "pplx-test")
+    monkeypatch.setattr(s.shutil, "which", lambda cmd, *a, **kw: "/usr/bin/openclaw")
+
+    async def empty_openclaw(query, max_results):
+        return []
+
+    async def pplx_with_result(query, max_results):
+        return [s.SearchResult(url="https://p", title="p", snippet="", source="perplexity")]
+
+    monkeypatch.setattr(s, "_openclaw_search", empty_openclaw)
+    monkeypatch.setattr(s, "_perplexity_search", pplx_with_result)
+    results = await s.web_search("test", max_results=3)
     assert results[0].source == "perplexity"
