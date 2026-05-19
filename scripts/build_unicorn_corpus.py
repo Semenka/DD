@@ -114,40 +114,155 @@ Rules:
 
 
 async def generate_founder_list() -> list[dict]:
-    """Use Perplexity (or Gemini fallback) to generate the 500-founder list."""
+    """Generate the 500-founder list via Perplexity, one cohort at a time.
+
+    A single Perplexity call hits its output-token cap well before 500 entries.
+    Splitting per cohort (~70-310 each) keeps each call within budget AND lets
+    us specify the cohort label deterministically rather than relying on the
+    LLM to assign it correctly."""
     from dd_agent.data_sources.search import ask_grounded
-    log.info("generating 500-founder list via grounded search (this is a one-time call)...")
-    ans = await ask_grounded(_GEN_PROMPT, max_sources=3)
-    if ans is None:
-        log.error("ask_grounded returned None — neither Perplexity nor Gemini available")
-        return []
-    text = ans.text.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*", "", text)
-        text = re.sub(r"\s*```$", "", text)
-    try:
-        data = json.loads(text)
-    except json.JSONDecodeError:
-        m = re.search(r"\{.*\}", text, re.DOTALL)
-        if not m:
-            log.error("could not parse JSON from response (first 400 chars): %s", text[:400])
-            return []
+
+    cohorts = (
+        ("public_sp500_nasdaq",
+         "currently in the S&P 500 or Nasdaq 100 where the founder is still a major "
+         "shareholder, board member, or active operator (CEO/Chair/Exec Chair). "
+         "Examples: Mark Zuckerberg (Meta), Jensen Huang (NVIDIA), Marc Benioff (Salesforce), "
+         "Eric Yuan (Zoom), Reed Hastings (Netflix), Larry Ellison (Oracle), Brian Chesky (Airbnb).",
+         "~80 founders"),
+        ("yc_top_100",
+         "founders of Y Combinator's top-100 alumni companies by current valuation. "
+         "Examples: Patrick Collison and John Collison (Stripe), Brian Chesky and Joe Gebbia "
+         "and Nathan Blecharczyk (Airbnb), Drew Houston (Dropbox), Henrique Dubugras and "
+         "Pedro Franceschi (Brex), Tony Xu (DoorDash), Sam Altman (OpenAI).",
+         "~120 founders"),
+        ("unicorn_private",
+         "notable 1B+ private companies (NOT in S&P 500 or Nasdaq 100, NOT primarily YC-known) "
+         "where the founder is currently CEO. "
+         "Examples: SpaceX (Elon Musk), Databricks (Ali Ghodsi, Matei Zaharia), "
+         "Canva (Melanie Perkins, Cliff Obrecht), Revolut (Nikolay Storonsky), "
+         "Deel (Alex Bouaziz), Anthropic (Dario Amodei, Daniela Amodei), "
+         "Figma (Dylan Field).",
+         "~150 founders"),
+    )
+
+    all_founders: list[dict] = []
+    for cohort, description, target_size in cohorts:
+        prompt = _build_cohort_prompt(cohort, description, target_size)
+        log.info("generating founder list for cohort %s (target %s)...",
+                 cohort, target_size)
         try:
-            data = json.loads(m.group(0))
-        except json.JSONDecodeError as exc:
-            log.error("JSON parse failed: %s", exc)
-            return []
+            # Bump max_tokens — each founder is ~30 tokens, target ~150 = ~4500.
+            ans = await ask_grounded(prompt, max_sources=3, max_tokens=8000)
+        except Exception as exc:
+            log.warning("cohort %s ask_grounded raised: %s", cohort, exc)
+            continue
+        if ans is None:
+            log.warning("cohort %s: no grounded answer (no Perplexity/Gemini key?)", cohort)
+            continue
+        founders = _parse_founder_response(ans.text, default_cohort=cohort)
+        if not founders:
+            log.warning("cohort %s: parser yielded 0 founders", cohort)
+            continue
+        log.info("cohort %s: %d founders", cohort, len(founders))
+        all_founders.extend(founders)
+
+    # Dedup by founder_id (some founders appear in multiple lists).
+    seen: set[str] = set()
+    deduped: list[dict] = []
+    for f in all_founders:
+        fid = f.get("founder_id")
+        if not fid or fid in seen:
+            continue
+        seen.add(fid)
+        deduped.append(f)
+    log.info("total: %d founders across all cohorts (deduped from %d)",
+             len(deduped), len(all_founders))
+    return deduped
+
+
+def _build_cohort_prompt(cohort: str, description: str, target_size: str) -> str:
+    """Per-cohort prompt — much shorter than the original combined prompt so
+    Perplexity has token headroom to actually emit the full list."""
+    return (
+        f'List founder-led companies matching this description ({target_size}): {description}\n\n'
+        'Output ONLY a single JSON object, no preamble, no markdown fences. '
+        f'Use cohort="{cohort}" for every entry. Schema:\n\n'
+        '{\n'
+        '  "founders": [\n'
+        '    {\n'
+        '      "founder_id": "first_last",   // lowercase, snake_case, ascii\n'
+        '      "name": "First Last",         // original spelling, diacritics ok\n'
+        '      "company": "Company name",    // short brand, no Inc/Corp\n'
+        f'      "cohort": "{cohort}",\n'
+        '      "company_domain": "company.com" // bare domain, no protocol/path\n'
+        '    }\n'
+        '  ]\n'
+        '}\n\n'
+        "Multi-founder companies: include each founder as a separate row. "
+        f"Aim for {target_size}. Output ONLY the JSON object — start with `{{`."
+    )
+
+
+def _parse_founder_response(text: str, default_cohort: str) -> list[dict]:
+    """Robust JSON parser for the founder-list response.
+
+    Handles: markdown fences, leading/trailing prose, and truncation mid-array
+    (clips the last incomplete row + closes the JSON braces)."""
+    s = text.strip()
+    if s.startswith("```"):
+        s = re.sub(r"^```(?:json)?\s*", "", s)
+        s = re.sub(r"\s*```$", "", s)
+    # Find the outermost {...} block.
+    start = s.find("{")
+    if start < 0:
+        return []
+    s = s[start:]
+
+    data = _try_parse_with_repair(s)
+    if not data:
+        log.error("could not parse JSON even after repair (first 300 chars): %s", s[:300])
+        return []
+
     founders = data.get("founders", []) if isinstance(data, dict) else []
-    log.info("got %d founders from grounded search", len(founders))
-    return founders
+    out: list[dict] = []
+    for row in founders:
+        if not isinstance(row, dict) or not row.get("name"):
+            continue
+        row.setdefault("cohort", default_cohort)
+        row.setdefault("founder_id", _slug_name(row["name"]))
+        out.append(row)
+    return out
 
 
-def load_or_generate_list(refresh: bool = False) -> list[dict]:
+def _try_parse_with_repair(s: str) -> dict | None:
+    """Try json.loads; on failure, clip the last incomplete row and close braces."""
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        pass
+    # Truncation repair: find the last `}` that closes a founders array entry,
+    # then close the array + outer object.
+    last_obj_end = s.rfind("}")
+    while last_obj_end > 0:
+        candidate = s[: last_obj_end + 1] + "\n]\n}"
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            last_obj_end = s.rfind("}", 0, last_obj_end)
+    return None
+
+
+def _slug_name(name: str) -> str:
+    s = re.sub(r"[^a-zA-Z0-9]+", "_", name).strip("_").lower()
+    return s[:60] or "unknown"
+
+
+async def load_or_generate_list(refresh: bool = False) -> list[dict]:
     """Cached founder-list loader. Falls back to legacy seed if no source."""
     if LIST_CACHE.exists() and not refresh:
         log.info("loading cached founder list from %s", LIST_CACHE)
         return json.loads(LIST_CACHE.read_text()).get("founders", [])
-    founders = asyncio.run(generate_founder_list())
+    founders = await generate_founder_list()
     if founders:
         LIST_CACHE.write_text(json.dumps({"founders": founders}, indent=2, ensure_ascii=False))
         log.info("cached %d founders to %s", len(founders), LIST_CACHE)
@@ -359,7 +474,7 @@ async def main_async(args) -> int:
     import pandas as pd
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    founders = load_or_generate_list(refresh=args.refresh_list)
+    founders = await load_or_generate_list(refresh=args.refresh_list)
     if args.cohort:
         founders = [f for f in founders if f.get("cohort") == args.cohort]
         log.info("filtered to cohort %s: %d founders", args.cohort, len(founders))
@@ -373,7 +488,10 @@ async def main_async(args) -> int:
     existing: dict[str, dict] = {}
     if OUT_PATH.exists() and not args.rebuild:
         df = pd.read_parquet(OUT_PATH)
-        existing = {r["founder_id"]: r for r in df.to_dict("records")}
+        for r in df.to_dict("records"):
+            # Backfill cohort on legacy rows that predate the cohort column.
+            r.setdefault("cohort", "unicorn_private")
+            existing[r["founder_id"]] = r
         log.info("loaded %d existing rows from %s", len(existing), OUT_PATH)
 
     app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
@@ -424,7 +542,8 @@ async def main_async(args) -> int:
     df.to_parquet(OUT_PATH, index=False)
     log.info("wrote %s — %d founders (%d new this run, %d skipped existing)",
              OUT_PATH, len(df), fetched, skipped)
-    log.info("cohort breakdown: %s", df["cohort"].value_counts().to_dict())
+    if "cohort" in df.columns:
+        log.info("cohort breakdown: %s", df["cohort"].value_counts().to_dict())
     return 0
 
 

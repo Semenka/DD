@@ -79,12 +79,20 @@ async def web_search(query: str, max_results: int = 8) -> list[SearchResult]:
     return await _duckduckgo(query, max_results)
 
 
-async def ask_grounded(question: str, max_sources: int = 10) -> GroundedAnswer | None:
+async def ask_grounded(
+    question: str,
+    max_sources: int = 10,
+    max_tokens: int = 1500,
+) -> GroundedAnswer | None:
     """Return a single grounded answer + citations. Used by the market subagent
-    where we want the search backend to actually read pages and synthesize."""
+    where we want the search backend to actually read pages and synthesize.
+
+    `max_tokens` controls the output size. Default 1500 is fine for "answer
+    one question with citations"; bump to 6000+ for "produce a long JSON list"
+    style calls (e.g. the founder-corpus generator)."""
     if os.environ.get("PERPLEXITY_API_KEY"):
         try:
-            out = await _perplexity_ask(question, max_sources)
+            out = await _perplexity_ask(question, max_sources, max_tokens=max_tokens)
             if out:
                 return out
         except Exception:
@@ -152,7 +160,9 @@ async def _perplexity_search(query: str, max_results: int) -> list[SearchResult]
     return out
 
 
-async def _perplexity_ask(question: str, max_sources: int) -> GroundedAnswer | None:
+async def _perplexity_ask(
+    question: str, max_sources: int, max_tokens: int = 1500,
+) -> GroundedAnswer | None:
     body = {
         "model": PPLX_MODEL,
         "messages": [
@@ -162,7 +172,7 @@ async def _perplexity_ask(question: str, max_sources: int) -> GroundedAnswer | N
             )},
             {"role": "user", "content": question},
         ],
-        "max_tokens": 1500,
+        "max_tokens": max_tokens,
     }
     async with httpx.AsyncClient(timeout=45.0) as client:
         r = await client.post(

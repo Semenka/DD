@@ -8,14 +8,31 @@ Exposed as an **MCP server** so OpenClaw, Claude Code, Cursor, Codex, or any MCP
 
 ## What it produces
 
-A single report (markdown + HTML + **PDF**) with four sections plus a synthesis page:
+A single report (markdown + HTML + **PDF**, default HTML with active citation links) with three layers of analysis:
+
+### Layer 1: Bessemer-style Investment Memo (long-form)
+
+A 1-2 page narrative memo modeled on the [Bessemer Venture Partners memos](https://www.bvp.com/memos): third-person present-tense prose interleaved with first-person partner asides. Required sections in order:
+**Investment Thesis** • **Company** • **Market** • **Why Now** • **Team** • **Traction** • **Outcomes Analysis** (if-we're-right + if-we're-wrong scenarios) • **Data Room** (5-7 diligence questions) • **Recommendation** with conviction level.
+
+### Layer 2: Elad-Gil-style four-section analyst report
 
 1. **Market** — current/projected size, competitor matrix, inflection thesis
-2. **Founders** — track record, integrity signals, energy, founder/market fit, last shipped projects, photo similarity vs 1B+ company founders
-3. **Traction** — reverse DCF + public-comp percentiles, ARR growth vs SaaS comps, independent-voice (G2/HN/Reddit) signal
-4. **Co-investors** — round-by-round private funding history (round, date, amount, post-money, lead, participants) **+ live notice.co secondary-market snapshot** (last price, bid, ask, implied valuation) + cap-table breakdown vs top VCs and super-angels + per-investor value-add hypothesis
+2. **Founders** — track record, integrity, energy, founder/market fit, photo similarity vs founder-led S&P 500 / Nasdaq 100 / YC top-100 / 1B+ private companies (with cohort breakdown of nearest matches)
+3. **Traction** — **revenue-quality classifier** (real ARR vs annualized pilots vs GMV vs one-time hardware), reverse DCF + public-comp percentiles, ARR growth vs SaaS comps, independent-voice (G2/HN/Reddit) signal
+4. **Co-investors** — round-by-round private funding history (round, date, amount, post-money, lead, participants) + live notice.co secondary-market snapshot + cap-table breakdown vs top VCs/super-angels + per-investor value-add
 
-Synthesis page: **Kill Shot**, **1-line bet** (≤20 words), and **Beliefs Required to Invest** — the 3-5 propositions that must each be true for this to be a fund-returner.
+### Layer 3: Synthesis page
+
+**Kill Shot** • **1-line bet** (≤20 words) • **Beliefs Required to Invest** — the 3-5 propositions that must each be true for this to be a fund-returner.
+
+## Inputs
+
+dd-agent accepts any of:
+- **PDF memo + PDF deck** — the original `submit_deal` signature
+- **Plain text memo** via `memo_text`
+- **Obsidian Web Clipper `.md`** — YAML frontmatter is parsed for source URL + title + author; any embedded pitch-deck link (Pitch.com, Google Slides, DocSend, Figma, Notion, Gamma, Slideshare) is screenshotted via headless Chromium and OCR'd via Gemini Vision into the deck text
+- **Company URL** alone — fetches and parses the company website
 
 ## Search backends
 
@@ -45,6 +62,12 @@ cd DD
 uv venv && source .venv/bin/activate
 uv pip install -e ".[photo]"
 cp .env.example .env       # optional: TAVILY_API_KEY for higher-quality web search
+```
+
+For Obsidian-clipping + pitch-deck screenshot OCR, also install Playwright's Chromium:
+
+```bash
+.venv/bin/playwright install chromium
 ```
 
 Photo classifier and podcast-transcription deps are optional extras:

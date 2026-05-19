@@ -1,0 +1,1936 @@
+{
+  "founders": [
+    {
+      "founder_id": "mark_zuckerberg",
+      "name": "Mark Zuckerberg",
+      "company": "Meta",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "meta.com"
+    },
+    {
+      "founder_id": "jensen_huang",
+      "name": "Jensen Huang",
+      "company": "NVIDIA",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "nvidia.com"
+    },
+    {
+      "founder_id": "marc_benioff",
+      "name": "Marc Benioff",
+      "company": "Salesforce",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "salesforce.com"
+    },
+    {
+      "founder_id": "eric_yuan",
+      "name": "Eric Yuan",
+      "company": "Zoom",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "zoom.com"
+    },
+    {
+      "founder_id": "reed_hastings",
+      "name": "Reed Hastings",
+      "company": "Netflix",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "netflix.com"
+    },
+    {
+      "founder_id": "larry_ellison",
+      "name": "Larry Ellison",
+      "company": "Oracle",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "oracle.com"
+    },
+    {
+      "founder_id": "brian_chesky",
+      "name": "Brian Chesky",
+      "company": "Airbnb",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "airbnb.com"
+    },
+    {
+      "founder_id": "julian_robinson",
+      "name": "Julian Robinson",
+      "company": "Fortinet",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "fortinet.com"
+    },
+    {
+      "founder_id": "david_marcus",
+      "name": "David Marcus",
+      "company": "Lightspeed Commerce",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "lightspeedhq.com"
+    },
+    {
+      "founder_id": "kyle_vokey",
+      "name": "Kyle Vokey",
+      "company": "Shopify",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "shopify.com"
+    },
+    {
+      "founder_id": "tobi_lutke",
+      "name": "Tobi Lütke",
+      "company": "Shopify",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "shopify.com"
+    },
+    {
+      "founder_id": "guy_patterson",
+      "name": "Guy P. Paterson",
+      "company": "Synopsys",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "synopsys.com"
+    },
+    {
+      "founder_id": "austin_ligon",
+      "name": "Austin Ligon",
+      "company": "CarMax",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "carmax.com"
+    },
+    {
+      "founder_id": "david_gardner",
+      "name": "David Gardner",
+      "company": "Intuit",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "intuit.com"
+    },
+    {
+      "founder_id": "scott_farquhar",
+      "name": "Scott Farquhar",
+      "company": "Atlassian",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "atlassian.com"
+    },
+    {
+      "founder_id": "michael_cannonbrookes",
+      "name": "Mike Cannon-Brookes",
+      "company": "Atlassian",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "atlassian.com"
+    },
+    {
+      "founder_id": "drew_houston",
+      "name": "Drew Houston",
+      "company": "Dropbox",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "dropbox.com"
+    },
+    {
+      "founder_id": "arash_fardowsi",
+      "name": "Arash Ferdowsi",
+      "company": "Dropbox",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "dropbox.com"
+    },
+    {
+      "founder_id": "dylan_field",
+      "name": "Dylan Field",
+      "company": "Figma",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "figma.com"
+    },
+    {
+      "founder_id": "patrick_collison",
+      "name": "Patrick Collison",
+      "company": "Stripe",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "stripe.com"
+    },
+    {
+      "founder_id": "john_collison",
+      "name": "John Collison",
+      "company": "Stripe",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "stripe.com"
+    },
+    {
+      "founder_id": "alexis_ohanian",
+      "name": "Alexis Ohanian",
+      "company": "Reddit",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "reddit.com"
+    },
+    {
+      "founder_id": "steve_huffman",
+      "name": "Steve Huffman",
+      "company": "Reddit",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "reddit.com"
+    },
+    {
+      "founder_id": "evan_spiegel",
+      "name": "Evan Spiegel",
+      "company": "Snap",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "snap.com"
+    },
+    {
+      "founder_id": "bobby_murphy",
+      "name": "Bobby Murphy",
+      "company": "Snap",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "snap.com"
+    },
+    {
+      "founder_id": "william_he",
+      "name": "William He",
+      "company": "A10 Networks",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "a10networks.com"
+    },
+    {
+      "founder_id": "amir_khosrowshahi",
+      "name": "Ari Khosrowshahi",
+      "company": "Lululemon",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "lululemon.com"
+    },
+    {
+      "founder_id": "chip_wilson",
+      "name": "Chip Wilson",
+      "company": "Lululemon",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "lululemon.com"
+    },
+    {
+      "founder_id": "kevin_plank",
+      "name": "Kevin Plank",
+      "company": "Under Armour",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "underarmour.com"
+    },
+    {
+      "founder_id": "tim_sweeney",
+      "name": "Tim Sweeney",
+      "company": "Epic Games",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "epicgames.com"
+    },
+    {
+      "founder_id": "guillermo_velo",
+      "name": "Guillermo Velo",
+      "company": "Mercado Libre",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "mercadolibre.com"
+    },
+    {
+      "founder_id": "marcos_galperin",
+      "name": "Marcos Galperin",
+      "company": "Mercado Libre",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "mercadolibre.com"
+    },
+    {
+      "founder_id": "joseph_tsai",
+      "name": "Joe Tsai",
+      "company": "Alibaba",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "alibaba.com"
+    },
+    {
+      "founder_id": "dustin_moskovitz",
+      "name": "Dustin Moskovitz",
+      "company": "Asana",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "asana.com"
+    },
+    {
+      "founder_id": "justin_rosenstein",
+      "name": "Justin Rosenstein",
+      "company": "Asana",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "asana.com"
+    },
+    {
+      "founder_id": "jose_bermudez",
+      "name": "José Bermúdez",
+      "company": "Nubank",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "nubank.com.br"
+    },
+    {
+      "founder_id": "david_velez",
+      "name": "David Vélez",
+      "company": "Nubank",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "nubank.com.br"
+    },
+    {
+      "founder_id": "cristina_junqueira",
+      "name": "Cristina Junqueira",
+      "company": "Nubank",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "nubank.com.br"
+    },
+    {
+      "founder_id": "adam_neumann",
+      "name": "Adam Neumann",
+      "company": "WeWork",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "wework.com"
+    },
+    {
+      "founder_id": "daniel_ek",
+      "name": "Daniel Ek",
+      "company": "Spotify",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "spotify.com"
+    },
+    {
+      "founder_id": "martin_lorentzon",
+      "name": "Martin Lorentzon",
+      "company": "Spotify",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "spotify.com"
+    },
+    {
+      "founder_id": "max_little",
+      "name": "Max Levchin",
+      "company": "Affirm",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "affirm.com"
+    },
+    {
+      "founder_id": "jared_levin",
+      "name": "Jared Levin",
+      "company": "Affirm",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "affirm.com"
+    },
+    {
+      "founder_id": "josh_browder",
+      "name": "Joshua Browder",
+      "company": "DoNotPay",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "donotpay.com"
+    },
+    {
+      "founder_id": "shai_agassi",
+      "name": "Shai Agassi",
+      "company": "Better Place",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "betterplace.com"
+    },
+    {
+      "founder_id": "khosla_ventures_founder",
+      "name": "Vinod Khosla",
+      "company": "Khosla Ventures",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "khoslaventures.com"
+    },
+    {
+      "founder_id": "rishi_sachdev",
+      "name": "Rishi Sachdev",
+      "company": "Cloudflare",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "cloudflare.com"
+    },
+    {
+      "founder_id": "matt_prince",
+      "name": "Matthew Prince",
+      "company": "Cloudflare",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "cloudflare.com"
+    },
+    {
+      "founder_id": "lee_lao",
+      "name": "Lei Jun",
+      "company": "Xiaomi",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "mi.com"
+    },
+    {
+      "founder_id": "steve_chen",
+      "name": "Steve Chen",
+      "company": "YouTube",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "youtube.com"
+    },
+    {
+      "founder_id": "jawed_karim",
+      "name": "Jawed Karim",
+      "company": "YouTube",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "youtube.com"
+    },
+    {
+      "founder_id": "chad_hurley",
+      "name": "Chad Hurley",
+      "company": "YouTube",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "youtube.com"
+    },
+    {
+      "founder_id": "larry_page",
+      "name": "Larry Page",
+      "company": "Alphabet",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "abc.xyz"
+    },
+    {
+      "founder_id": "sergey_brin",
+      "name": "Sergey Brin",
+      "company": "Alphabet",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "abc.xyz"
+    },
+    {
+      "founder_id": "jack_dorsey",
+      "name": "Jack Dorsey",
+      "company": "Block",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "block.xyz"
+    },
+    {
+      "founder_id": "james_mccelvey",
+      "name": "Jim McKelvey",
+      "company": "Block",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "block.xyz"
+    },
+    {
+      "founder_id": "rahul_vohra",
+      "name": "Rahul Vohra",
+      "company": "Superhuman",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "superhuman.com"
+    },
+    {
+      "founder_id": "pat_grady",
+      "name": "Pat Grady",
+      "company": "Sequoia Capital",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "sequoiacap.com"
+    },
+    {
+      "founder_id": "tom_leighton",
+      "name": "Tom Leighton",
+      "company": "Akamai",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "akamai.com"
+    },
+    {
+      "founder_id": "danial_scheiman",
+      "name": "Daniel Schreiber",
+      "company": "Lemonade",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "lemonade.com"
+    },
+    {
+      "founder_id": "shai_winere",
+      "name": "Shai Wininger",
+      "company": "Lemonade",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "lemonade.com"
+    },
+    {
+      "founder_id": "amir_shevat",
+      "name": "Amir Shevat",
+      "company": "Twitch",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "twitch.tv"
+    },
+    {
+      "founder_id": "henrik_fisker",
+      "name": "Henrik Fisker",
+      "company": "Fisker",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "fiskerinc.com"
+    },
+    {
+      "founder_id": "rj_scaringe",
+      "name": "R. J. Scaringe",
+      "company": "Rivian",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "rivian.com"
+    },
+    {
+      "founder_id": "jane_liu",
+      "name": "Jane Lu",
+      "company": "Showpo",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "showpo.com"
+    },
+    {
+      "founder_id": "david_rubenstein",
+      "name": "David Rubenstein",
+      "company": "Carlyle",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "carlyle.com"
+    },
+    {
+      "founder_id": "bill_mcdowell",
+      "name": "Bill McDermott",
+      "company": "ServiceNow",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "servicenow.com"
+    },
+    {
+      "founder_id": "frank_slootman",
+      "name": "Frank Slootman",
+      "company": "Snowflake",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "snowflake.com"
+    },
+    {
+      "founder_id": "benev_schnitzler",
+      "name": "Ben Schnitzler",
+      "company": "Toast",
+      "cohort": "public_sp500_nasdaq",
+      "company_domain": "toasttab.com"
+    },
+    {
+      "founder_id": "joe_gebbia",
+      "name": "Joe Gebbia",
+      "company": "Airbnb",
+      "cohort": "yc_top_100",
+      "company_domain": "airbnb.com"
+    },
+    {
+      "founder_id": "nathan_blecharczyk",
+      "name": "Nathan Blecharczyk",
+      "company": "Airbnb",
+      "cohort": "yc_top_100",
+      "company_domain": "airbnb.com"
+    },
+    {
+      "founder_id": "henrique_dubugras",
+      "name": "Henrique Dubugras",
+      "company": "Brex",
+      "cohort": "yc_top_100",
+      "company_domain": "brex.com"
+    },
+    {
+      "founder_id": "pedro_franceschi",
+      "name": "Pedro Franceschi",
+      "company": "Brex",
+      "cohort": "yc_top_100",
+      "company_domain": "brex.com"
+    },
+    {
+      "founder_id": "tony_xu",
+      "name": "Tony Xu",
+      "company": "DoorDash",
+      "cohort": "yc_top_100",
+      "company_domain": "doordash.com"
+    },
+    {
+      "founder_id": "sam_altman",
+      "name": "Sam Altman",
+      "company": "OpenAI",
+      "cohort": "yc_top_100",
+      "company_domain": "openai.com"
+    },
+    {
+      "founder_id": "max_lvk",
+      "name": "Max Levchin",
+      "company": "Affirm",
+      "cohort": "yc_top_100",
+      "company_domain": "affirm.com"
+    },
+    {
+      "founder_id": "jared_schreiber",
+      "name": "Jared Schreiber",
+      "company": "North",
+      "cohort": "yc_top_100",
+      "company_domain": "north.com"
+    },
+    {
+      "founder_id": "daniel_gross",
+      "name": "Daniel Gross",
+      "company": "Pinecone",
+      "cohort": "yc_top_100",
+      "company_domain": "pinecone.io"
+    },
+    {
+      "founder_id": "ida_tin",
+      "name": "Ida Tin",
+      "company": "Clue",
+      "cohort": "yc_top_100",
+      "company_domain": "helloclue.com"
+    },
+    {
+      "founder_id": "jessica_livingston",
+      "name": "Jessica Livingston",
+      "company": "Y Combinator",
+      "cohort": "yc_top_100",
+      "company_domain": "ycombinator.com"
+    },
+    {
+      "founder_id": "paul_graham",
+      "name": "Paul Graham",
+      "company": "Y Combinator",
+      "cohort": "yc_top_100",
+      "company_domain": "ycombinator.com"
+    },
+    {
+      "founder_id": "jessica_alkire",
+      "name": "Jessica Alkire",
+      "company": "Brex",
+      "cohort": "yc_top_100",
+      "company_domain": "brex.com"
+    },
+    {
+      "founder_id": "ryan_breslow",
+      "name": "Ryan Breslow",
+      "company": "Bolt",
+      "cohort": "yc_top_100",
+      "company_domain": "bolt.com"
+    },
+    {
+      "founder_id": "mark_ivanier",
+      "name": "Mark Ivanier",
+      "company": "Bolt",
+      "cohort": "yc_top_100",
+      "company_domain": "bolt.com"
+    },
+    {
+      "founder_id": "alex_bouaziz",
+      "name": "Alex Bouaziz",
+      "company": "Deel",
+      "cohort": "yc_top_100",
+      "company_domain": "deel.com"
+    },
+    {
+      "founder_id": "shuo_wang",
+      "name": "Shuo Wang",
+      "company": "Deel",
+      "cohort": "yc_top_100",
+      "company_domain": "deel.com"
+    },
+    {
+      "founder_id": "maarten_suksompong",
+      "name": "Maarten Suksompong",
+      "company": "Rippling",
+      "cohort": "yc_top_100",
+      "company_domain": "rippling.com"
+    },
+    {
+      "founder_id": "pragya_jain",
+      "name": "Pragya Jain",
+      "company": "Rippling",
+      "cohort": "yc_top_100",
+      "company_domain": "rippling.com"
+    },
+    {
+      "founder_id": "tim_davis",
+      "name": "Tim Davis",
+      "company": "Rappi",
+      "cohort": "yc_top_100",
+      "company_domain": "rappi.com"
+    },
+    {
+      "founder_id": "simone_borsellino",
+      "name": "Simone Borsellino",
+      "company": "Rappi",
+      "cohort": "yc_top_100",
+      "company_domain": "rappi.com"
+    },
+    {
+      "founder_id": "brendan_foody",
+      "name": "Brendan Foody",
+      "company": "Mercor",
+      "cohort": "yc_top_100",
+      "company_domain": "mercor.com"
+    },
+    {
+      "founder_id": "adit_singh",
+      "name": "Adit Singh",
+      "company": "Mercor",
+      "cohort": "yc_top_100",
+      "company_domain": "mercor.com"
+    },
+    {
+      "founder_id": "sonya_huang",
+      "name": "Sonya Huang",
+      "company": "Turing",
+      "cohort": "yc_top_100",
+      "company_domain": "turing.com"
+    },
+    {
+      "founder_id": "jonathan_siddharth",
+      "name": "Jonathan Siddharth",
+      "company": "Turing",
+      "cohort": "yc_top_100",
+      "company_domain": "turing.com"
+    },
+    {
+      "founder_id": "fabiola_kusi",
+      "name": "Fabiola Kusi",
+      "company": "Monzo",
+      "cohort": "yc_top_100",
+      "company_domain": "monzo.com"
+    },
+    {
+      "founder_id": "tom_blomfield",
+      "name": "Tom Blomfield",
+      "company": "Monzo",
+      "cohort": "yc_top_100",
+      "company_domain": "monzo.com"
+    },
+    {
+      "founder_id": "nik_saini",
+      "name": "Nik Saini",
+      "company": "Gusto",
+      "cohort": "yc_top_100",
+      "company_domain": "gusto.com"
+    },
+    {
+      "founder_id": "josh_reeves",
+      "name": "Josh Reeves",
+      "company": "Gusto",
+      "cohort": "yc_top_100",
+      "company_domain": "gusto.com"
+    },
+    {
+      "founder_id": "sahil_lavingia",
+      "name": "Sahil Lavingia",
+      "company": "Gumroad",
+      "cohort": "yc_top_100",
+      "company_domain": "gumroad.com"
+    },
+    {
+      "founder_id": "susan_wu",
+      "name": "Susan Wu",
+      "company": "Thumbtack",
+      "cohort": "yc_top_100",
+      "company_domain": "thumbtack.com"
+    },
+    {
+      "founder_id": "matt_levine",
+      "name": "Matt Levine",
+      "company": "Thumbtack",
+      "cohort": "yc_top_100",
+      "company_domain": "thumbtack.com"
+    },
+    {
+      "founder_id": "aaron_levie",
+      "name": "Aaron Levie",
+      "company": "Box",
+      "cohort": "yc_top_100",
+      "company_domain": "box.com"
+    },
+    {
+      "founder_id": "dylan_smith",
+      "name": "Dylan Smith",
+      "company": "Box",
+      "cohort": "yc_top_100",
+      "company_domain": "box.com"
+    },
+    {
+      "founder_id": "aref_g",
+      "name": "Aref Ghanbarzadeh",
+      "company": "Lattice",
+      "cohort": "yc_top_100",
+      "company_domain": "lattice.com"
+    },
+    {
+      "founder_id": "jack_altman",
+      "name": "Jack Altman",
+      "company": "Lattice",
+      "cohort": "yc_top_100",
+      "company_domain": "lattice.com"
+    },
+    {
+      "founder_id": "kirill_bigai",
+      "name": "Kirill Bigai",
+      "company": "People.ai",
+      "cohort": "yc_top_100",
+      "company_domain": "people.ai"
+    },
+    {
+      "founder_id": "volodymyr_martynov",
+      "name": "Volodymyr Martynov",
+      "company": "People.ai",
+      "cohort": "yc_top_100",
+      "company_domain": "people.ai"
+    },
+    {
+      "founder_id": "dara_khosrowshahi",
+      "name": "Dara Khosrowshahi",
+      "company": "Uber",
+      "cohort": "yc_top_100",
+      "company_domain": "uber.com"
+    },
+    {
+      "founder_id": "travis_kalanick",
+      "name": "Travis Kalanick",
+      "company": "Uber",
+      "cohort": "yc_top_100",
+      "company_domain": "uber.com"
+    },
+    {
+      "founder_id": "garrett_camp",
+      "name": "Garrett Camp",
+      "company": "Uber",
+      "cohort": "yc_top_100",
+      "company_domain": "uber.com"
+    },
+    {
+      "founder_id": "logan_green",
+      "name": "Logan Green",
+      "company": "Lyft",
+      "cohort": "yc_top_100",
+      "company_domain": "lyft.com"
+    },
+    {
+      "founder_id": "john_zimmer",
+      "name": "John Zimmer",
+      "company": "Lyft",
+      "cohort": "yc_top_100",
+      "company_domain": "lyft.com"
+    },
+    {
+      "founder_id": "patrick_smith",
+      "name": "Patrick Smith",
+      "company": "Instacart",
+      "cohort": "yc_top_100",
+      "company_domain": "instacart.com"
+    },
+    {
+      "founder_id": "max_mullen",
+      "name": "Max Mullen",
+      "company": "Instacart",
+      "cohort": "yc_top_100",
+      "company_domain": "instacart.com"
+    },
+    {
+      "founder_id": "apoorva_mehta",
+      "name": "Apoorva Mehta",
+      "company": "Instacart",
+      "cohort": "yc_top_100",
+      "company_domain": "instacart.com"
+    },
+    {
+      "founder_id": "aaron_swartz",
+      "name": "Aaron Swartz",
+      "company": "Reddit",
+      "cohort": "yc_top_100",
+      "company_domain": "reddit.com"
+    },
+    {
+      "founder_id": "malte_ue",
+      "name": "Malte Ubl",
+      "company": "Vercel",
+      "cohort": "yc_top_100",
+      "company_domain": "vercel.com"
+    },
+    {
+      "founder_id": "guillermo_rauch",
+      "name": "Guillermo Rauch",
+      "company": "Vercel",
+      "cohort": "yc_top_100",
+      "company_domain": "vercel.com"
+    },
+    {
+      "founder_id": "daniel_gros",
+      "name": "Daniel Gross",
+      "company": "Pinecone",
+      "cohort": "yc_top_100",
+      "company_domain": "pinecone.io"
+    },
+    {
+      "founder_id": "edo_liberty",
+      "name": "Edo Liberty",
+      "company": "Pinecone",
+      "cohort": "yc_top_100",
+      "company_domain": "pinecone.io"
+    },
+    {
+      "founder_id": "naval_ravikant",
+      "name": "Naval Ravikant",
+      "company": "AngelList",
+      "cohort": "yc_top_100",
+      "company_domain": "angellist.com"
+    },
+    {
+      "founder_id": "navabop",
+      "name": "Nirav Tolia",
+      "company": "Nextdoor",
+      "cohort": "yc_top_100",
+      "company_domain": "nextdoor.com"
+    },
+    {
+      "founder_id": "priyanka_jain",
+      "name": "Priyanka Jain",
+      "company": "Stanza",
+      "cohort": "yc_top_100",
+      "company_domain": "stanza.co"
+    },
+    {
+      "founder_id": "praveen_seshadri",
+      "name": "Praveen Seshadri",
+      "company": "ZScaler",
+      "cohort": "yc_top_100",
+      "company_domain": "zscaler.com"
+    },
+    {
+      "founder_id": "jay_chaudhry",
+      "name": "Jay Chaudhry",
+      "company": "Zscaler",
+      "cohort": "yc_top_100",
+      "company_domain": "zscaler.com"
+    },
+    {
+      "founder_id": "mark_michael",
+      "name": "Mark Michael",
+      "company": "Glean",
+      "cohort": "yc_top_100",
+      "company_domain": "glean.com"
+    },
+    {
+      "founder_id": "arvind_jain",
+      "name": "Arvind Jain",
+      "company": "Glean",
+      "cohort": "yc_top_100",
+      "company_domain": "glean.com"
+    },
+    {
+      "founder_id": "mukul_parkash",
+      "name": "Mukul Parkash",
+      "company": "Zepto",
+      "cohort": "yc_top_100",
+      "company_domain": "zepto.com"
+    },
+    {
+      "founder_id": "adil_ajmal",
+      "name": "Adil Ajmal",
+      "company": "Zepto",
+      "cohort": "yc_top_100",
+      "company_domain": "zepto.com"
+    },
+    {
+      "founder_id": "kaivalya_vohra",
+      "name": "Kaivalya Vohra",
+      "company": "Zepto",
+      "cohort": "yc_top_100",
+      "company_domain": "zepto.com"
+    },
+    {
+      "founder_id": "aadit_palimar",
+      "name": "Aadit Palicha",
+      "company": "Zepto",
+      "cohort": "yc_top_100",
+      "company_domain": "zepto.com"
+    },
+    {
+      "founder_id": "rehan_shaikh",
+      "name": "Rehan Shaikh",
+      "company": "Zepto",
+      "cohort": "yc_top_100",
+      "company_domain": "zepto.com"
+    },
+    {
+      "founder_id": "akash_gupta",
+      "name": "Akash Gupta",
+      "company": "Zepto",
+      "cohort": "yc_top_100",
+      "company_domain": "zepto.com"
+    },
+    {
+      "founder_id": "harshil_mathur",
+      "name": "Harshil Mathur",
+      "company": "Razorpay",
+      "cohort": "yc_top_100",
+      "company_domain": "razorpay.com"
+    },
+    {
+      "founder_id": "shashank_kumar",
+      "name": "Shashank Kumar",
+      "company": "Razorpay",
+      "cohort": "yc_top_100",
+      "company_domain": "razorpay.com"
+    },
+    {
+      "founder_id": "manik_gupta",
+      "name": "Manik Gupta",
+      "company": "CRED",
+      "cohort": "yc_top_100",
+      "company_domain": "cred.club"
+    },
+    {
+      "founder_id": "kunal_shah",
+      "name": "Kunal Shah",
+      "company": "CRED",
+      "cohort": "yc_top_100",
+      "company_domain": "cred.club"
+    },
+    {
+      "founder_id": "adrian_ludwig",
+      "name": "Adrian Ludwig",
+      "company": "Cleer",
+      "cohort": "yc_top_100",
+      "company_domain": "cleer.com"
+    },
+    {
+      "founder_id": "aaron_ross",
+      "name": "Aaron Ross",
+      "company": "Cohere",
+      "cohort": "yc_top_100",
+      "company_domain": "cohere.com"
+    },
+    {
+      "founder_id": "nick_frosst",
+      "name": "Nick Frosst",
+      "company": "Cohere",
+      "cohort": "yc_top_100",
+      "company_domain": "cohere.com"
+    },
+    {
+      "founder_id": "yoshua_bengio",
+      "name": "Yoshua Bengio",
+      "company": "LawZero",
+      "cohort": "yc_top_100",
+      "company_domain": "lawzero.org"
+    },
+    {
+      "founder_id": "michael_seibel",
+      "name": "Michael Seibel",
+      "company": "Y Combinator",
+      "cohort": "yc_top_100",
+      "company_domain": "ycombinator.com"
+    },
+    {
+      "founder_id": "garry_tan",
+      "name": "Garry Tan",
+      "company": "Y Combinator",
+      "cohort": "yc_top_100",
+      "company_domain": "ycombinator.com"
+    },
+    {
+      "founder_id": "trevor_blackwell",
+      "name": "Trevor Blackwell",
+      "company": "Y Combinator",
+      "cohort": "yc_top_100",
+      "company_domain": "ycombinator.com"
+    },
+    {
+      "founder_id": "george_zachary",
+      "name": "George Zachary",
+      "company": "Y Combinator",
+      "cohort": "yc_top_100",
+      "company_domain": "ycombinator.com"
+    },
+    {
+      "founder_id": "keith_rabois",
+      "name": "Keith Rabois",
+      "company": "Founders Fund",
+      "cohort": "yc_top_100",
+      "company_domain": "foundersfund.com"
+    },
+    {
+      "founder_id": "josh_buckley",
+      "name": "Josh Buckley",
+      "company": "Product Hunt",
+      "cohort": "yc_top_100",
+      "company_domain": "producthunt.com"
+    },
+    {
+      "founder_id": "ryan_hoover",
+      "name": "Ryan Hoover",
+      "company": "Product Hunt",
+      "cohort": "yc_top_100",
+      "company_domain": "producthunt.com"
+    },
+    {
+      "founder_id": "jason_lemkin",
+      "name": "Jason Lemkin",
+      "company": "SaaStr",
+      "cohort": "yc_top_100",
+      "company_domain": "saastr.com"
+    },
+    {
+      "founder_id": "michael_dubin",
+      "name": "Michael Dubin",
+      "company": "Dollar Shave Club",
+      "cohort": "yc_top_100",
+      "company_domain": "dollarshaveclub.com"
+    },
+    {
+      "founder_id": "mark_lore",
+      "name": "Mark Lore",
+      "company": "Jet.com",
+      "cohort": "yc_top_100",
+      "company_domain": "jet.com"
+    },
+    {
+      "founder_id": "terry_lu",
+      "name": "Terry Lu",
+      "company": "Stedi",
+      "cohort": "yc_top_100",
+      "company_domain": "stedi.com"
+    },
+    {
+      "founder_id": "jacob_grote",
+      "name": "Jacob Grote",
+      "company": "Stedi",
+      "cohort": "yc_top_100",
+      "company_domain": "stedi.com"
+    },
+    {
+      "founder_id": "evan_wallace",
+      "name": "Evan Wallace",
+      "company": "Figma",
+      "cohort": "yc_top_100",
+      "company_domain": "figma.com"
+    },
+    {
+      "founder_id": "justin_kahn",
+      "name": "Justin Kan",
+      "company": "Twitch",
+      "cohort": "yc_top_100",
+      "company_domain": "twitch.tv"
+    },
+    {
+      "founder_id": "emmett_shear",
+      "name": "Emmett Shear",
+      "company": "Twitch",
+      "cohort": "yc_top_100",
+      "company_domain": "twitch.tv"
+    },
+    {
+      "founder_id": "kyle_vogt",
+      "name": "Kyle Vogt",
+      "company": "Cruise",
+      "cohort": "yc_top_100",
+      "company_domain": "getcruise.com"
+    },
+    {
+      "founder_id": "daniel_kan",
+      "name": "Daniel Kan",
+      "company": "Cruise",
+      "cohort": "yc_top_100",
+      "company_domain": "getcruise.com"
+    },
+    {
+      "founder_id": "matt_ma",
+      "name": "Matt Ma",
+      "company": "Sana",
+      "cohort": "yc_top_100",
+      "company_domain": "sana.com"
+    },
+    {
+      "founder_id": "jorge_soto",
+      "name": "Jorge Soto",
+      "company": "Sana",
+      "cohort": "yc_top_100",
+      "company_domain": "sana.com"
+    },
+    {
+      "founder_id": "elon_musk",
+      "name": "Elon Musk",
+      "company": "SpaceX",
+      "cohort": "unicorn_private",
+      "company_domain": "spacex.com"
+    },
+    {
+      "founder_id": "mohit_arora",
+      "name": "Mohit Aron",
+      "company": "Nutanix",
+      "cohort": "unicorn_private",
+      "company_domain": "nutanix.com"
+    },
+    {
+      "founder_id": "vijay_sambamurthy",
+      "name": "Vijay Sambamurthy",
+      "company": "Rubrik",
+      "cohort": "unicorn_private",
+      "company_domain": "rubrik.com"
+    },
+    {
+      "founder_id": "arne_duncan",
+      "name": "Arne Duncan",
+      "company": "Chicago Beyond",
+      "cohort": "unicorn_private",
+      "company_domain": "chicagobeyond.org"
+    },
+    {
+      "founder_id": "phil_libin",
+      "name": "Phil Libin",
+      "company": "All Turtles",
+      "cohort": "unicorn_private",
+      "company_domain": "allturtles.com"
+    },
+    {
+      "founder_id": "steve_charniak",
+      "name": "Steve Charniak",
+      "company": "Attentive",
+      "cohort": "unicorn_private",
+      "company_domain": "attentive.com"
+    },
+    {
+      "founder_id": "joel_monegro",
+      "name": "Joel Monegro",
+      "company": "Placeholder",
+      "cohort": "unicorn_private",
+      "company_domain": "placeholder.vc"
+    },
+    {
+      "founder_id": "somash_garg",
+      "name": "Somash Garg",
+      "company": "Scale AI",
+      "cohort": "unicorn_private",
+      "company_domain": "scale.com"
+    },
+    {
+      "founder_id": "alexandr_wang",
+      "name": "Alexandr Wang",
+      "company": "Scale AI",
+      "cohort": "unicorn_private",
+      "company_domain": "scale.com"
+    },
+    {
+      "founder_id": "george_hotz",
+      "name": "George Hotz",
+      "company": "Comma.ai",
+      "cohort": "unicorn_private",
+      "company_domain": "comma.ai"
+    },
+    {
+      "founder_id": "melanie_perkins",
+      "name": "Melanie Perkins",
+      "company": "Canva",
+      "cohort": "unicorn_private",
+      "company_domain": "canva.com"
+    },
+    {
+      "founder_id": "cliff_obrecht",
+      "name": "Cliff Obrecht",
+      "company": "Canva",
+      "cohort": "unicorn_private",
+      "company_domain": "canva.com"
+    },
+    {
+      "founder_id": "cameron_adams",
+      "name": "Cameron Adams",
+      "company": "Canva",
+      "cohort": "unicorn_private",
+      "company_domain": "canva.com"
+    },
+    {
+      "founder_id": "nikolay_storonsky",
+      "name": "Nikolay Storonsky",
+      "company": "Revolut",
+      "cohort": "unicorn_private",
+      "company_domain": "revolut.com"
+    },
+    {
+      "founder_id": "vlad_yatsenko",
+      "name": "Vlad Yatsenko",
+      "company": "Revolut",
+      "cohort": "unicorn_private",
+      "company_domain": "revolut.com"
+    },
+    {
+      "founder_id": "dario_amodei",
+      "name": "Dario Amodei",
+      "company": "Anthropic",
+      "cohort": "unicorn_private",
+      "company_domain": "anthropic.com"
+    },
+    {
+      "founder_id": "daniela_amodei",
+      "name": "Daniela Amodei",
+      "company": "Anthropic",
+      "cohort": "unicorn_private",
+      "company_domain": "anthropic.com"
+    },
+    {
+      "founder_id": "jack_clark",
+      "name": "Jack Clark",
+      "company": "Anthropic",
+      "cohort": "unicorn_private",
+      "company_domain": "anthropic.com"
+    },
+    {
+      "founder_id": "scott_lake",
+      "name": "Scott Lake",
+      "company": "Shopify",
+      "cohort": "unicorn_private",
+      "company_domain": "shopify.com"
+    },
+    {
+      "founder_id": "josh_koch",
+      "name": "Josh Koch",
+      "company": "Shopify",
+      "cohort": "unicorn_private",
+      "company_domain": "shopify.com"
+    },
+    {
+      "founder_id": "kevin_systrom",
+      "name": "Kevin Systrom",
+      "company": "Instagram",
+      "cohort": "unicorn_private",
+      "company_domain": "instagram.com"
+    },
+    {
+      "founder_id": "mike_krieger",
+      "name": "Mike Krieger",
+      "company": "Instagram",
+      "cohort": "unicorn_private",
+      "company_domain": "instagram.com"
+    },
+    {
+      "founder_id": "jan_koum",
+      "name": "Jan Koum",
+      "company": "WhatsApp",
+      "cohort": "unicorn_private",
+      "company_domain": "whatsapp.com"
+    },
+    {
+      "founder_id": "brian_acton",
+      "name": "Brian Acton",
+      "company": "WhatsApp",
+      "cohort": "unicorn_private",
+      "company_domain": "whatsapp.com"
+    },
+    {
+      "founder_id": "pavel_durov",
+      "name": "Pavel Durov",
+      "company": "Telegram",
+      "cohort": "unicorn_private",
+      "company_domain": "telegram.org"
+    },
+    {
+      "founder_id": "nikolai_durov",
+      "name": "Nikolai Durov",
+      "company": "Telegram",
+      "cohort": "unicorn_private",
+      "company_domain": "telegram.org"
+    },
+    {
+      "founder_id": "max_lvchin",
+      "name": "Max Levchin",
+      "company": "Affirm",
+      "cohort": "unicorn_private",
+      "company_domain": "affirm.com"
+    },
+    {
+      "founder_id": "jared_tarbell",
+      "name": "Jared Tarbell",
+      "company": "LendingClub",
+      "cohort": "unicorn_private",
+      "company_domain": "lendingclub.com"
+    },
+    {
+      "founder_id": "rajesh_setty",
+      "name": "Rajesh Setty",
+      "company": "ThoughtSpot",
+      "cohort": "unicorn_private",
+      "company_domain": "thoughtspot.com"
+    },
+    {
+      "founder_id": "amit_prakash",
+      "name": "Amit Prakash",
+      "company": "ThoughtSpot",
+      "cohort": "unicorn_private",
+      "company_domain": "thoughtspot.com"
+    },
+    {
+      "founder_id": "chengcheng_shi",
+      "name": "Chengcheng Shi",
+      "company": "ThoughtSpot",
+      "cohort": "unicorn_private",
+      "company_domain": "thoughtspot.com"
+    },
+    {
+      "founder_id": "hemant_taneja",
+      "name": "Hemant Taneja",
+      "company": "General Catalyst",
+      "cohort": "unicorn_private",
+      "company_domain": "generalcatalyst.com"
+    },
+    {
+      "founder_id": "sumer_juneja",
+      "name": "Sumer Juneja",
+      "company": "SoftBank India",
+      "cohort": "unicorn_private",
+      "company_domain": "softbank.com"
+    },
+    {
+      "founder_id": "natasha_masgandhi",
+      "name": "Natasha Masgandhi",
+      "company": "Aisera",
+      "cohort": "unicorn_private",
+      "company_domain": "aisera.com"
+    },
+    {
+      "founder_id": "abhishek_sen",
+      "name": "Abhishek Sen",
+      "company": "Aisera",
+      "cohort": "unicorn_private",
+      "company_domain": "aisera.com"
+    },
+    {
+      "founder_id": "romaric_baudrier",
+      "name": "Romaric Baudrier",
+      "company": "Pigment",
+      "cohort": "unicorn_private",
+      "company_domain": "pigment.com"
+    },
+    {
+      "founder_id": "eliott_salle",
+      "name": "Eliott Salle",
+      "company": "Pigment",
+      "cohort": "unicorn_private",
+      "company_domain": "pigment.com"
+    },
+    {
+      "founder_id": "carl_pei",
+      "name": "Carl Pei",
+      "company": "Nothing",
+      "cohort": "unicorn_private",
+      "company_domain": "nothing.tech"
+    },
+    {
+      "founder_id": "caroline_caselitz",
+      "name": "Caroline Caselitz",
+      "company": "Nothing",
+      "cohort": "unicorn_private",
+      "company_domain": "nothing.tech"
+    },
+    {
+      "founder_id": "jose_philippe_krast",
+      "name": "José Philippe Krast",
+      "company": "BlaBlaCar",
+      "cohort": "unicorn_private",
+      "company_domain": "blablacar.com"
+    },
+    {
+      "founder_id": "frédéric_mazella",
+      "name": "Frédéric Mazzella",
+      "company": "BlaBlaCar",
+      "cohort": "unicorn_private",
+      "company_domain": "blablacar.com"
+    },
+    {
+      "founder_id": "nic_colin",
+      "name": "Nic Colin",
+      "company": "BlaBlaCar",
+      "cohort": "unicorn_private",
+      "company_domain": "blablacar.com"
+    },
+    {
+      "founder_id": "alexis_bonmariage",
+      "name": "Alexis Bonmariage",
+      "company": "Messari",
+      "cohort": "unicorn_private",
+      "company_domain": "messari.io"
+    },
+    {
+      "founder_id": "ryan_selkis",
+      "name": "Ryan Selkis",
+      "company": "Messari",
+      "cohort": "unicorn_private",
+      "company_domain": "messari.io"
+    },
+    {
+      "founder_id": "andrew_saunders",
+      "name": "Andrew Saunders",
+      "company": "Groq",
+      "cohort": "unicorn_private",
+      "company_domain": "groq.com"
+    },
+    {
+      "founder_id": "john_schirrmann",
+      "name": "John Schirrmann",
+      "company": "Groq",
+      "cohort": "unicorn_private",
+      "company_domain": "groq.com"
+    },
+    {
+      "founder_id": "lenny_pruss",
+      "name": "Lenny Pruss",
+      "company": "Groq",
+      "cohort": "unicorn_private",
+      "company_domain": "groq.com"
+    },
+    {
+      "founder_id": "jordan_jacobs",
+      "name": "Jordan Jacobs",
+      "company": "Element AI",
+      "cohort": "unicorn_private",
+      "company_domain": "elementai.com"
+    },
+    {
+      "founder_id": "samir_kaul",
+      "name": "Samir Kaul",
+      "company": "Khosla Ventures",
+      "cohort": "unicorn_private",
+      "company_domain": "khoslaventures.com"
+    },
+    {
+      "founder_id": "dhananjay_mahajan",
+      "name": "Dhananjay Mahajan",
+      "company": "Observe.AI",
+      "cohort": "unicorn_private",
+      "company_domain": "observe.ai"
+    },
+    {
+      "founder_id": "saurabh_madan",
+      "name": "Saurabh Madan",
+      "company": "Observe.AI",
+      "cohort": "unicorn_private",
+      "company_domain": "observe.ai"
+    },
+    {
+      "founder_id": "vipul_bhagat",
+      "name": "Vipul Bhagat",
+      "company": "Observe.AI",
+      "cohort": "unicorn_private",
+      "company_domain": "observe.ai"
+    },
+    {
+      "founder_id": "priyanka_jha",
+      "name": "Priyanka Jha",
+      "company": "Observe.AI",
+      "cohort": "unicorn_private",
+      "company_domain": "observe.ai"
+    },
+    {
+      "founder_id": "virendra_singh",
+      "name": "Virendra Singh",
+      "company": "Observe.AI",
+      "cohort": "unicorn_private",
+      "company_domain": "observe.ai"
+    },
+    {
+      "founder_id": "sujith_vijay",
+      "name": "Sujith Vijay",
+      "company": "Observe.AI",
+      "cohort": "unicorn_private",
+      "company_domain": "observe.ai"
+    },
+    {
+      "founder_id": "jaiyant_ganguly",
+      "name": "Jaiyant Ganguly",
+      "company": "Observe.AI",
+      "cohort": "unicorn_private",
+      "company_domain": "observe.ai"
+    },
+    {
+      "founder_id": "arvind_parthasarathi",
+      "name": "Arvind Parthasarathi",
+      "company": "Observe.AI",
+      "cohort": "unicorn_private",
+      "company_domain": "observe.ai"
+    },
+    {
+      "founder_id": "bharath_shankar",
+      "name": "Bharath Shankar",
+      "company": "Observe.AI",
+      "cohort": "unicorn_private",
+      "company_domain": "observe.ai"
+    },
+    {
+      "founder_id": "anand_subramanian",
+      "name": "Anand Subramanian",
+      "company": "Observe.AI",
+      "cohort": "unicorn_private",
+      "company_domain": "observe.ai"
+    },
+    {
+      "founder_id": "sriram_raghavan",
+      "name": "Sriram Raghavan",
+      "company": "Observe.AI",
+      "cohort": "unicorn_private",
+      "company_domain": "observe.ai"
+    },
+    {
+      "founder_id": "anirban_mukherjee",
+      "name": "Anirban Mukherjee",
+      "company": "Perfios",
+      "cohort": "unicorn_private",
+      "company_domain": "perfios.com"
+    },
+    {
+      "founder_id": "suresh_kumar",
+      "name": "Suresh Kumar",
+      "company": "Perfios",
+      "cohort": "unicorn_private",
+      "company_domain": "perfios.com"
+    },
+    {
+      "founder_id": "suren_ramasubramanian",
+      "name": "Suren Ramasubramanian",
+      "company": "Perfios",
+      "cohort": "unicorn_private",
+      "company_domain": "perfios.com"
+    },
+    {
+      "founder_id": "kushagra_khanna",
+      "name": "Kushagra Khanna",
+      "company": "Perfios",
+      "cohort": "unicorn_private",
+      "company_domain": "perfios.com"
+    },
+    {
+      "founder_id": "greg_brockman",
+      "name": "Greg Brockman",
+      "company": "OpenAI",
+      "cohort": "unicorn_private",
+      "company_domain": "openai.com"
+    },
+    {
+      "founder_id": "iliya_sutskever",
+      "name": "Ilya Sutskever",
+      "company": "Safe Superintelligence",
+      "cohort": "unicorn_private",
+      "company_domain": "ssi.inc"
+    },
+    {
+      "founder_id": "maithra_raghu",
+      "name": "Maithra Raghu",
+      "company": "Tamarind Bio",
+      "cohort": "unicorn_private",
+      "company_domain": "tamarind.bio"
+    },
+    {
+      "founder_id": "aurelien_geron",
+      "name": "Aurélien Géron",
+      "company": "Tamarind Bio",
+      "cohort": "unicorn_private",
+      "company_domain": "tamarind.bio"
+    },
+    {
+      "founder_id": "zach_perret",
+      "name": "Zach Perret",
+      "company": "Plaid",
+      "cohort": "unicorn_private",
+      "company_domain": "plaid.com"
+    },
+    {
+      "founder_id": "will_milller",
+      "name": "Will Miller",
+      "company": "Plaid",
+      "cohort": "unicorn_private",
+      "company_domain": "plaid.com"
+    },
+    {
+      "founder_id": "john_jennings",
+      "name": "John Jennings",
+      "company": "Plaid",
+      "cohort": "unicorn_private",
+      "company_domain": "plaid.com"
+    },
+    {
+      "founder_id": "nikil_viswanathan",
+      "name": "Nikil Viswanathan",
+      "company": "Alchemy",
+      "cohort": "unicorn_private",
+      "company_domain": "alchemy.com"
+    },
+    {
+      "founder_id": "joe_lau",
+      "name": "Joe Lau",
+      "company": "Alchemy",
+      "cohort": "unicorn_private",
+      "company_domain": "alchemy.com"
+    },
+    {
+      "founder_id": "amit_kumar",
+      "name": "Amit Kumar",
+      "company": "Airtable",
+      "cohort": "unicorn_private",
+      "company_domain": "airtable.com"
+    },
+    {
+      "founder_id": "howie_liu",
+      "name": "Howie Liu",
+      "company": "Airtable",
+      "cohort": "unicorn_private",
+      "company_domain": "airtable.com"
+    },
+    {
+      "founder_id": "till_kraus",
+      "name": "Till Kraus",
+      "company": "Airtable",
+      "cohort": "unicorn_private",
+      "company_domain": "airtable.com"
+    },
+    {
+      "founder_id": "daniel_schultz",
+      "name": "Daniel Schultz",
+      "company": "Brex",
+      "cohort": "unicorn_private",
+      "company_domain": "brex.com"
+    },
+    {
+      "founder_id": "ramp_founder",
+      "name": "Eric Glyman",
+      "company": "Ramp",
+      "cohort": "unicorn_private",
+      "company_domain": "ramp.com"
+    },
+    {
+      "founder_id": "karim_attoumani",
+      "name": "Karim Attoumani",
+      "company": "Ramp",
+      "cohort": "unicorn_private",
+      "company_domain": "ramp.com"
+    },
+    {
+      "founder_id": "naveen_tejwani",
+      "name": "Naveen Tejwani",
+      "company": "Ramp",
+      "cohort": "unicorn_private",
+      "company_domain": "ramp.com"
+    },
+    {
+      "founder_id": "aarti_ghoti",
+      "name": "Aarti Ghoti",
+      "company": "Hightouch",
+      "cohort": "unicorn_private",
+      "company_domain": "hightouch.com"
+    },
+    {
+      "founder_id": "mono_chesh",
+      "name": "Tejas Manohar",
+      "company": "Hightouch",
+      "cohort": "unicorn_private",
+      "company_domain": "hightouch.com"
+    },
+    {
+      "founder_id": "ajay_chaudhry",
+      "name": "Ajay Chaudhry",
+      "company": "Hightouch",
+      "cohort": "unicorn_private",
+      "company_domain": "hightouch.com"
+    },
+    {
+      "founder_id": "aayush_bhansali",
+      "name": "Aayush Bhansali",
+      "company": "Observe",
+      "cohort": "unicorn_private",
+      "company_domain": "observo.ai"
+    },
+    {
+      "founder_id": "michael_hayes",
+      "name": "Michael Hayes",
+      "company": "Observe",
+      "cohort": "unicorn_private",
+      "company_domain": "observo.ai"
+    },
+    {
+      "founder_id": "bennet_baron",
+      "name": "Bennet Baron",
+      "company": "Observe",
+      "cohort": "unicorn_private",
+      "company_domain": "observo.ai"
+    },
+    {
+      "founder_id": "andreessen_horowitz",
+      "name": "Marc Andreessen",
+      "company": "Andreessen Horowitz",
+      "cohort": "unicorn_private",
+      "company_domain": "a16z.com"
+    },
+    {
+      "founder_id": "ben_horowitz",
+      "name": "Ben Horowitz",
+      "company": "Andreessen Horowitz",
+      "cohort": "unicorn_private",
+      "company_domain": "a16z.com"
+    },
+    {
+      "founder_id": "lars_dalgaard",
+      "name": "Lars Dalgaard",
+      "company": "SuccessFactors",
+      "cohort": "unicorn_private",
+      "company_domain": "successfactors.com"
+    },
+    {
+      "founder_id": "shantanu_narayen",
+      "name": "Shantanu Narayen",
+      "company": "Adobe",
+      "cohort": "unicorn_private",
+      "company_domain": "adobe.com"
+    },
+    {
+      "founder_id": "sarita_scholz",
+      "name": "Sarita Scholz",
+      "company": "DeepL",
+      "cohort": "unicorn_private",
+      "company_domain": "deepl.com"
+    },
+    {
+      "founder_id": "jaroslaw_kutylowski",
+      "name": "Jarosław Kutylowski",
+      "company": "DeepL",
+      "cohort": "unicorn_private",
+      "company_domain": "deepl.com"
+    },
+    {
+      "founder_id": "thorsten_goetz",
+      "name": "Thorsten Goetz",
+      "company": "Celonis",
+      "cohort": "unicorn_private",
+      "company_domain": "celonis.com"
+    },
+    {
+      "founder_id": "bastian_nominacher",
+      "name": "Bastian Nominacher",
+      "company": "Celonis",
+      "cohort": "unicorn_private",
+      "company_domain": "celonis.com"
+    },
+    {
+      "founder_id": "ralf_wagner",
+      "name": "Ralf Wagner",
+      "company": "Celonis",
+      "cohort": "unicorn_private",
+      "company_domain": "celonis.com"
+    },
+    {
+      "founder_id": "henrik_berggren",
+      "name": "Henrik Berggren",
+      "company": "Klarna",
+      "cohort": "unicorn_private",
+      "company_domain": "klarna.com"
+    },
+    {
+      "founder_id": "sebastian_siemiatkowski",
+      "name": "Sebastian Siemiatkowski",
+      "company": "Klarna",
+      "cohort": "unicorn_private",
+      "company_domain": "klarna.com"
+    },
+    {
+      "founder_id": "niklas_adalberth",
+      "name": "Niklas Adalberth",
+      "company": "Klarna",
+      "cohort": "unicorn_private",
+      "company_domain": "klarna.com"
+    },
+    {
+      "founder_id": "victor_jacobsson",
+      "name": "Victor Jacobsson",
+      "company": "Klarna",
+      "cohort": "unicorn_private",
+      "company_domain": "klarna.com"
+    },
+    {
+      "founder_id": "albert_wenger",
+      "name": "Albert Wenger",
+      "company": "Union Square Ventures",
+      "cohort": "unicorn_private",
+      "company_domain": "usv.com"
+    },
+    {
+      "founder_id": "fred_wilson",
+      "name": "Fred Wilson",
+      "company": "Union Square Ventures",
+      "cohort": "unicorn_private",
+      "company_domain": "usv.com"
+    },
+    {
+      "founder_id": "tracy_young",
+      "name": "Tracy Young",
+      "company": "PlanGrid",
+      "cohort": "unicorn_private",
+      "company_domain": "plangrid.com"
+    },
+    {
+      "founder_id": "aimee_marcus",
+      "name": "Aimee Marcus",
+      "company": "MasterClass",
+      "cohort": "unicorn_private",
+      "company_domain": "masterclass.com"
+    },
+    {
+      "founder_id": "david_rogier",
+      "name": "David Rogier",
+      "company": "MasterClass",
+      "cohort": "unicorn_private",
+      "company_domain": "masterclass.com"
+    },
+    {
+      "founder_id": "jasmine_sherman",
+      "name": "Jasmine Sherman",
+      "company": "MasterClass",
+      "cohort": "unicorn_private",
+      "company_domain": "masterclass.com"
+    },
+    {
+      "founder_id": "fahad_mahmood",
+      "name": "Clem Delangue",
+      "company": "Hugging Face",
+      "cohort": "unicorn_private",
+      "company_domain": "huggingface.co"
+    },
+    {
+      "founder_id": "clém_delangue",
+      "name": "Clément Delangue",
+      "company": "Hugging Face",
+      "cohort": "unicorn_private",
+      "company_domain": "huggingface.co"
+    },
+    {
+      "founder_id": "julien_chaumond",
+      "name": "Julien Chaumond",
+      "company": "Hugging Face",
+      "cohort": "unicorn_private",
+      "company_domain": "huggingface.co"
+    },
+    {
+      "founder_id": "thomas_wolf",
+      "name": "Thomas Wolf",
+      "company": "Hugging Face",
+      "cohort": "unicorn_private",
+      "company_domain": "huggingface.co"
+    },
+    {
+      "founder_id": "alexandre_george",
+      "name": "Alexandre George",
+      "company": "Mirakl",
+      "cohort": "unicorn_private",
+      "company_domain": "mirakl.com"
+    },
+    {
+      "founder_id": "pierre_sapey",
+      "name": "Pierre Sabatier",
+      "company": "Mirakl",
+      "cohort": "unicorn_private",
+      "company_domain": "mirakl.com"
+    },
+    {
+      "founder_id": "stan_krute",
+      "name": "Stan Krute",
+      "company": "Mirakl",
+      "cohort": "unicorn_private",
+      "company_domain": "mirakl.com"
+    },
+    {
+      "founder_id": "fei_fei_li",
+      "name": "Fei-Fei Li",
+      "company": "World Labs",
+      "cohort": "unicorn_private",
+      "company_domain": "worldlabs.ai"
+    },
+    {
+      "founder_id": "justin_berkich",
+      "name": "Justin Berkich",
+      "company": "World Labs",
+      "cohort": "unicorn_private",
+      "company_domain": "worldlabs.ai"
+    },
+    {
+      "founder_id": "jason_fried",
+      "name": "Jason Fried",
+      "company": "Basecamp",
+      "cohort": "unicorn_private",
+      "company_domain": "basecamp.com"
+    },
+    {
+      "founder_id": "david_heinemeier_hansson",
+      "name": "David Heinemeier Hansson",
+      "company": "Basecamp",
+      "cohort": "unicorn_private",
+      "company_domain": "basecamp.com"
+    }
+  ]
+}
