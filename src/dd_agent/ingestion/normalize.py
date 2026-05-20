@@ -113,6 +113,13 @@ async def normalize(
     llm = await _extract_with_llm(raw_memo, raw_deck, raw_site) or {}
     data = _merge(heuristic, llm)
 
+    # Post-merge sanity check: if the company_name turned out to be a section
+    # header (e.g. "TERMS", "Our Story") because the LLM grabbed a PDF heading,
+    # clear it so downstream code can say "Unknown" rather than misroute.
+    cn = data.get("company_name")
+    if cn and _is_section_header(cn):
+        data["company_name"] = None
+
     ctx = DealContext(
         deal_id=deal_id or uuid.uuid4().hex[:12],
         company_name=data.get("company_name") or "Unknown",
@@ -400,6 +407,9 @@ _SECTION_HEADERS = frozenset(s.lower() for s in {
     # AngelList / Carta common templates:
     "Highlights", "Round Details", "Cap Table", "Recent Investors",
     "Lead Investor", "Notable Investors",
+    # Single-word ALL CAPS section titles that PDFs often have at the top:
+    "Terms", "TERMS", "Disclaimer", "Disclosure", "Index", "Contents",
+    "Appendix", "About", "About Us", "Contact", "Notes",
 })
 
 
