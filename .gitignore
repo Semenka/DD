@@ -22,3 +22,4 @@ data/smoke_test.db
 build/
 dist/
 data/deck_shots/
+data/queue/

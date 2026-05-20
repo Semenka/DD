@@ -157,20 +157,68 @@ async def list_deals(limit: int = 50) -> list[dict[str, Any]]:
 
 
 def main() -> None:
-    """CLI entry. `dd-agent serve` starts the stdio MCP server."""
+    """CLI entry."""
     args = sys.argv[1:]
     if args and args[0] == "serve":
         mcp.run()
-    else:
-        print(
-            "dd-agent — Elad-Gil-style DD agent\n\n"
-            "Usage:\n"
-            "  dd-agent serve            # run as stdio MCP server\n\n"
-            "Test without MCP:\n"
-            "  python scripts/smoke_test.py --memo path/to/memo.md --deck path/to/deck.pdf",
-            file=sys.stderr,
+        return
+    if args and args[0] == "process-deal":
+        # Detached subprocess worker — runs ONE deal's pipeline to completion.
+        # Args: `process-deal <deal_id> <payload_json_path>`. Invoked by
+        # `orchestrator._spawn_pipeline_subprocess`.
+        if len(args) < 3:
+            print("usage: dd-agent process-deal <deal_id> <payload.json>", file=sys.stderr)
+            sys.exit(2)
+        _run_detached_worker(deal_id=args[1], payload_path=args[2])
+        return
+    print(
+        "dd-agent — Elad-Gil-style DD agent\n\n"
+        "Usage:\n"
+        "  dd-agent serve                            # run as stdio MCP server\n"
+        "  dd-agent process-deal <id> <payload.json> # run one pipeline (worker)\n\n"
+        "Test without MCP:\n"
+        "  python scripts/smoke_test.py --memo path/to/memo.md --deck path/to/deck.pdf",
+        file=sys.stderr,
+    )
+    sys.exit(0)
+
+
+def _run_detached_worker(deal_id: str, payload_path: str) -> None:
+    """Worker entry point — runs ONE deal's pipeline to completion in its own
+    event loop. This survives the MCP server closing its stdio because we're
+    in a new session (start_new_session=True in the Popen call)."""
+    import asyncio
+    import json
+    import os
+    from pathlib import Path
+    from .orchestrator import _run_pipeline
+    from .delivery import DeliverTo
+    from .state import DealStore
+
+    payload = json.loads(Path(payload_path).read_text())
+
+    async def go():
+        store = DealStore()
+        await store.init()
+        await _run_pipeline(
+            store=store,
+            deal_id=deal_id,
+            memo_text=payload.get("memo_text"),
+            memo_path=payload.get("memo_path"),
+            deck_path=payload.get("deck_path"),
+            company_url=payload.get("company_url"),
+            founder_names=payload.get("founder_names"),
+            deliver_to=DeliverTo.from_dict(payload.get("deliver_to")),
         )
-        sys.exit(0)
+
+    try:
+        asyncio.run(go())
+    finally:
+        # Remove the payload file once we've finished (success or failure).
+        try:
+            os.unlink(payload_path)
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":

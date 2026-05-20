@@ -56,22 +56,94 @@ async def submit(
     founder_names: list[str] | None = None,
     deliver_to: dict[str, Any] | None = None,
 ) -> SubmittedDeal:
-    """Create a deal record and kick off the DD pipeline in the background.
+    """Create a deal record and kick off the DD pipeline in a DETACHED subprocess.
 
-    If `deliver_to` is set, dd-agent itself sends the finished report via
-    `openclaw message send` — caller doesn't need to poll."""
+    Why a subprocess, not asyncio.create_task: the MCP server's parent process
+    (OpenClaw) typically closes stdin to dd-agent right after the submit_deal
+    call returns. When asyncio.run()'s loop sees EOF on stdin it tears down,
+    cancelling any background tasks — including a pipeline that might still
+    have 5 minutes of work to do. We saw this bug live with the Alfred deal
+    (May 20 16:10): submit returned deal_id, the asyncio task was cancelled at
+    16:10:14 in 'running subagents' phase, deal stuck forever.
+
+    The detached subprocess survives OpenClaw closing the MCP stdio because
+    it has its own session (start_new_session=True). It writes its result
+    back to the same SQLite DB the MCP server reads from."""
     record = await store.create()
-    asyncio.create_task(_run_pipeline(
-        store=store,
+    await _spawn_pipeline_subprocess(
         deal_id=record.deal_id,
         memo_text=memo_text,
         memo_path=memo_path,
         deck_path=deck_path,
         company_url=company_url,
         founder_names=founder_names,
-        deliver_to=DeliverTo.from_dict(deliver_to),
-    ))
+        deliver_to=deliver_to,
+    )
     return SubmittedDeal(deal_id=record.deal_id, company_name=None, status=record.status.value)
+
+
+async def _spawn_pipeline_subprocess(
+    *,
+    deal_id: str,
+    memo_text: str | None,
+    memo_path: str | None,
+    deck_path: str | None,
+    company_url: str | None,
+    founder_names: list[str] | None,
+    deliver_to: dict[str, Any] | None,
+) -> None:
+    """Spawn `dd-agent process-deal <deal_id>` as a detached subprocess.
+
+    The payload (memo_text + paths + deliver_to) is passed via a temp JSON
+    file because (a) memo_text can be many KB and (b) we don't want to leak
+    the deliver_to channel token via process argv. The child reads + unlinks
+    the file at startup.
+    """
+    import json
+    import os
+    import shutil
+    import subprocess
+    import sys
+    import tempfile
+    payload = {
+        "memo_text": memo_text,
+        "memo_path": memo_path,
+        "deck_path": deck_path,
+        "company_url": company_url,
+        "founder_names": founder_names,
+        "deliver_to": deliver_to,
+    }
+    queue_dir = Path(os.environ.get("DD_DATA_DIR", "./data")) / "queue"
+    queue_dir.mkdir(parents=True, exist_ok=True)
+    payload_path = queue_dir / f"{deal_id}.json"
+    payload_path.write_text(json.dumps(payload, ensure_ascii=False))
+
+    # Prefer the dd-agent CLI on PATH. Fall back to invoking the same Python
+    # interpreter that's running the server (lets us survive uv-managed venvs
+    # without dd-agent being on the inherited PATH).
+    bin_path = shutil.which("dd-agent")
+    if bin_path:
+        cmd = [bin_path, "process-deal", deal_id, str(payload_path)]
+    else:
+        cmd = [sys.executable, "-m", "dd_agent.server", "process-deal", deal_id, str(payload_path)]
+
+    log_path = queue_dir / f"{deal_id}.log"
+    log_fh = open(log_path, "ab")
+    try:
+        subprocess.Popen(
+            cmd,
+            stdin=subprocess.DEVNULL,
+            stdout=log_fh,
+            stderr=log_fh,
+            close_fds=True,
+            start_new_session=True,        # detach from MCP server's session
+            env={**os.environ},            # inherit env so .env was loaded
+        )
+        log.info("spawned detached pipeline for deal %s (pid via Popen, log=%s)",
+                 deal_id, log_path)
+    finally:
+        # Parent can close its handle — the child inherits its own fd.
+        log_fh.close()
 
 
 async def _run_pipeline(
