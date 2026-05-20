@@ -94,6 +94,10 @@ python scripts/build_unicorn_corpus.py   # founder photos → InsightFace embedd
 
 Both ship with seeded fallback data so the agent works before you run them.
 
+**Photo corpus realistic ceiling (as of v4):** the agent's Perplexity-generated 276-founder seed list resolves to ~126 successful InsightFace embeddings via the four-tier photo cascade (Wikipedia → company team page → web search → grounded LLM URL lookup). The remaining 150 founders are mostly Indian / Southeast Asian unicorn founders without English Wikipedia presence and whose company sites' `/team` and `/leadership` paths either 404 or don't expose alt-text matching their Romanized names. The architecture supports the full 500 — extending coverage requires either Crunchbase/PitchBook API access or hand-curated photo URLs for those tail founders.
+
+The build supports incremental runs: just re-run `python scripts/build_unicorn_corpus.py` and only founders not yet in the parquet are attempted. Checkpoints write every 20 newly-embedded founders so crashes don't lose progress.
+
 ## Run as MCP server
 
 ```bash
