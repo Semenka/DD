@@ -34,6 +34,35 @@ def test_heuristic_finds_company_from_memo_title():
     assert data["company_name"] == "Stripe"
 
 
+def test_heuristic_skips_section_headers_as_company_name():
+    """Regression: Alfred AngelList memo had 'OUR STORY' as a section header
+    which was grabbed as the company name. Section headers should be
+    ignored so the next candidate (or the LLM extraction) gets a chance."""
+    # The memo's only capitalized phrase in the first 8 lines is 'Our Story'
+    memo = "Our Story\n\nAlfred is a productivity company founded in 2020."
+    data = norm._extract_heuristic(memo, "", "")
+    # Should NOT pick 'Our Story' — let LLM extraction handle it.
+    assert data.get("company_name") != "Our Story"
+
+
+def test_heuristic_skips_section_headers_in_company_line():
+    """Even if a 'Company:' line says 'Our Story', skip it."""
+    memo = "Company: Our Story\n\nThis is a section header, not a real company."
+    data = norm._extract_heuristic(memo, "", "")
+    assert data.get("company_name") != "Our Story"
+
+
+def test_is_section_header():
+    """Direct unit test of the section-header detector."""
+    assert norm._is_section_header("Our Story")
+    assert norm._is_section_header("our story")  # case-insensitive
+    assert norm._is_section_header("TEAM")
+    assert norm._is_section_header("Traction")
+    assert not norm._is_section_header("Alfred")
+    assert not norm._is_section_header("Linear")
+    assert not norm._is_section_header("Stripe")
+
+
 def test_heuristic_extracts_stage_and_valuation():
     memo = "**Stage:** Series B\nRaising $50M at $400M valuation.\n"
     data = norm._extract_heuristic(memo, "", "")

@@ -385,22 +385,47 @@ def _extract_heuristic(memo: str, deck: str, site: str) -> dict:
     return result
 
 
+# Common deck / memo section headers that look like company names but aren't.
+# Hit by Alfred AngelList memo which has "OUR STORY" as a section title that
+# our regex grabbed as the company name.
+_SECTION_HEADERS = frozenset(s.lower() for s in {
+    "Our Story", "Our Team", "Our Mission", "Our Vision", "Our Values",
+    "Our Product", "Our Customers", "Our Investors", "Our Approach",
+    "Team", "Traction", "Market", "Overview", "Summary", "Problem",
+    "Solution", "Product", "Customers", "Investors", "Founders",
+    "Why Now", "The Ask", "Use of Funds", "Financials", "Metrics",
+    "Background", "Vision", "Mission", "Story", "Investment Memo",
+    "Deal Memo", "Pitch Deck", "Company Overview", "Executive Summary",
+    "Confidential", "Terms of Service", "Privacy Policy", "Legal",
+    # AngelList / Carta common templates:
+    "Highlights", "Round Details", "Cap Table", "Recent Investors",
+    "Lead Investor", "Notable Investors",
+})
+
+
+def _is_section_header(name: str) -> bool:
+    """A guessed company-name candidate is a section header if it matches one
+    of the common deck/memo section titles (case-insensitive)."""
+    return name.strip().lower() in _SECTION_HEADERS
+
+
 def _guess_company(memo: str, deck: str, site: str) -> str | None:
     """Pick the most likely company name. Priority:
     1. Explicit "Company: X" line (covers both memo and deck)
     2. "# Investment Memo — X" header
-    3. First capitalized phrase in the first 8 lines (last resort)
+    3. First capitalized phrase in the first 8 lines that ISN'T a section header
     """
     blob = "\n".join([memo, deck, site])
     m = _COMPANY_LINE_RE.search(blob)
     if m:
         name = m.group(1).strip().rstrip(".,;:—-")
-        if name and name.lower() not in {"unknown", "tbd", "n/a"}:
+        if name and name.lower() not in {"unknown", "tbd", "n/a"} \
+                and not _is_section_header(name):
             return name
     m = _MEMO_TITLE_RE.search(blob)
     if m:
         name = m.group(1).strip().rstrip(".,;:—-")
-        if name:
+        if name and not _is_section_header(name):
             return name
     for src in (deck, memo, site):
         lines = [l.strip() for l in src.splitlines() if l.strip()][:8]
@@ -409,7 +434,9 @@ def _guess_company(memo: str, deck: str, site: str) -> str | None:
                 continue
             m = _CAPITALIZED_BIGRAM.match(line)
             if m and len(line) < 80:
-                return m.group(1)
+                candidate = m.group(1)
+                if not _is_section_header(candidate):
+                    return candidate
     return None
 
 
