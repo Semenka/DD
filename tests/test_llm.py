@@ -58,3 +58,45 @@ def test_rewrite_citations_handles_missing_map():
     text = "Foo [1]"
     out = rewrite_citations(text, {})
     assert out == "Foo [1]"
+
+
+async def test_render_section_falls_back_to_gemini_on_codex_error(monkeypatch):
+    """When codex_exec raises CodexError (timeout, etc.) the renderer should
+    transparently call Gemini so the pipeline doesn't stall."""
+    from dd_agent.modules import _llm
+
+    async def boom(prompt, **kw):
+        raise _llm.CodexError("simulated codex timeout")
+
+    async def fake_gemini(prompt, max_tokens=4000):
+        return "GEMINI-OK"
+
+    monkeypatch.setattr(_llm, "codex_exec", boom)
+    monkeypatch.setattr(_llm, "_gemini_render", fake_gemini)
+    text = await _llm.render_section(system="sys", user="usr", max_tokens=100)
+    assert text == "GEMINI-OK"
+
+
+async def test_render_section_falls_back_when_codex_missing(monkeypatch):
+    """CodexUnavailableError (no binary) also routes through Gemini."""
+    from dd_agent.modules import _llm
+
+    async def boom(prompt, **kw):
+        raise _llm.CodexUnavailableError("no codex on PATH")
+
+    async def fake_gemini(prompt, max_tokens=4000):
+        return "GEMINI-FALLBACK"
+
+    monkeypatch.setattr(_llm, "codex_exec", boom)
+    monkeypatch.setattr(_llm, "_gemini_render", fake_gemini)
+    text = await _llm.render_section(system="sys", user="usr")
+    assert text == "GEMINI-FALLBACK"
+
+
+async def test_gemini_render_raises_without_key(monkeypatch):
+    """If neither codex nor a Gemini key is available, fail loudly."""
+    from dd_agent.modules import _llm
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    import pytest
+    with pytest.raises(_llm.CodexError):
+        await _llm._gemini_render("hello", max_tokens=10)

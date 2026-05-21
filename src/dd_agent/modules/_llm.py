@@ -130,10 +130,14 @@ async def render_section(
     system: str,
     user: str,
     model: str | None = None,
-    max_tokens: int = 4000,  # noqa: ARG001 — kept for API compat; codex chooses
+    max_tokens: int = 4000,
 ) -> str:
-    """Subagent entry point. System + user are joined with a clear delimiter
-    since `codex exec` is single-prompt (no role separation on the CLI)."""
+    """Subagent entry point. Tries codex first; on timeout/error falls back
+    to a direct Gemini API call so the pipeline doesn't stall on a single
+    codex hang. We saw codex_exec time out at 300s on large multi-thousand-
+    token subagent prompts even though `codex login status` says auth is fine
+    and quick prompts complete in <2s — likely ChatGPT-side rate limiting
+    when many subagent calls fire in parallel."""
     combined = (
         "<system_instructions>\n"
         f"{system}\n"
@@ -142,7 +146,45 @@ async def render_section(
         f"{user}\n"
         "</task>"
     )
-    return await codex_exec(combined, model=model or DEFAULT_MODEL)
+    try:
+        return await codex_exec(combined, model=model or DEFAULT_MODEL)
+    except CodexError as exc:
+        # codex hung or errored — try Gemini fallback.
+        import logging
+        logging.getLogger("dd_agent.llm").warning(
+            "codex_exec failed (%s); falling back to Gemini", exc,
+        )
+    except CodexUnavailableError:
+        # codex CLI not installed at all — silently go to Gemini.
+        pass
+    return await _gemini_render(combined, max_tokens=max_tokens)
+
+
+async def _gemini_render(prompt: str, max_tokens: int = 4000) -> str:
+    """Fallback path when codex is unavailable / hung. Uses the Gemini API
+    directly (the same key already configured for search grounding)."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise CodexError(
+            "codex unavailable and GEMINI_API_KEY not set — no LLM fallback available"
+        )
+    import httpx
+    model = os.environ.get("DD_GEMINI_MODEL", "gemini-2.5-flash")
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{model}:generateContent?key={api_key}"
+    )
+    body = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"maxOutputTokens": max_tokens},
+    }
+    async with httpx.AsyncClient(timeout=180.0) as client:
+        r = await client.post(url, json=body)
+        r.raise_for_status()
+        data = r.json()
+    cand = (data.get("candidates") or [{}])[0]
+    parts = cand.get("content", {}).get("parts") or []
+    return "".join(p.get("text", "") for p in parts).strip()
 
 
 def load_prompt(path: str) -> str:
