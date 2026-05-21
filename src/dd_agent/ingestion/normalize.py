@@ -410,6 +410,10 @@ _SECTION_HEADERS = frozenset(s.lower() for s in {
     # Single-word ALL CAPS section titles that PDFs often have at the top:
     "Terms", "TERMS", "Disclaimer", "Disclosure", "Index", "Contents",
     "Appendix", "About", "About Us", "Contact", "Notes",
+    # Stand-alone "Investment" / "Memo" / "Pitch" — AngelList template fragments
+    # whose LLM grabs without realizing it's not a company name:
+    "Investment", "Memo", "Pitch", "Round", "Funding", "Deal", "Round Summary",
+    "Investment Summary", "Investment Highlights", "Investment Memorandum",
 })
 
 
