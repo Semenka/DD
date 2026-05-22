@@ -22,6 +22,7 @@ from pathlib import Path
 
 from .citations import Citation, CitationBook
 from .context import DealContext
+from .data_sources import exits as exits_mod
 from .delivery import DeliverTo, deliver, extract_one_line_bet
 from .ingestion import clipper as clipper_mod
 from .ingestion import screenshot_deck as deck_mod
@@ -239,6 +240,22 @@ async def _run_pipeline(
         )
 
         merged = _merge_sections(market_t, founders_t, traction_t, coinvestors_t)
+
+        # Series B+ only: pull comparable exits via grounded LLM. Adds ~10s
+        # but gives the Bessemer memo a real "Comparable exits" table.
+        if (ctx.stage or "") in ("series_b", "series_c_plus", "growth"):
+            try:
+                exits_result = await exits_mod.discover_exits(
+                    ctx.company_name, sector=ctx.sector,
+                )
+                if exits_result.comps:
+                    merged.setdefault("extras", {})["comparable_exits"] = exits_mod.to_jsonable(
+                        exits_result,
+                    )
+                    log.info("discovered %d comparable exits for %s",
+                             len(exits_result.comps), ctx.company_name)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("comparable-exits lookup failed: %s", exc)
 
         synth = await _synthesize(ctx, merged, base_system)
 
@@ -462,13 +479,26 @@ async def _synthesize_bessemer(
     """6th LLM call — produces the long-form Bessemer-style memo that
     appears at the top of the report (between Synthesis and the analyst
     sections)."""
+    stage = ctx.stage or "series_a"  # default depth when undisclosed
     body_parts: list[str] = [
+        f"STAGE: {stage}",
+        "",
         f"# Deal: {ctx.company_name}",
-        f"Sector: {ctx.sector or 'unknown'} | Stage: {ctx.stage or 'unknown'} | "
+        f"Sector: {ctx.sector or 'unknown'} | Stage: {stage} | "
         f"Ask: ${ctx.ask_amount_usd or 'unknown'} at ${ctx.ask_valuation_usd or 'unknown'}",
     ]
     if ctx.founders:
         body_parts.append("Founders: " + ", ".join(f.name for f in ctx.founders))
+
+    # Surface photo profile prose summaries up front so the prompt can find
+    # them easily (the prompt's Team section specifically looks for these).
+    photo_analyses = (merged.get("extras") or {}).get("photo_analyses") or []
+    if photo_analyses:
+        body_parts.append("\n## Photo profiles (use summary_for_prompt in Team section)")
+        for p in photo_analyses:
+            summary = p.get("summary_for_prompt") if isinstance(p, dict) else None
+            if summary:
+                body_parts.append(f"\n<photo_profile>\n{summary}\n</photo_profile>")
 
     body_parts.append(f"\n---\n\n## Synthesis (already written)\n\n{synth}")
     body_parts.append(f"\n---\n\n## Market\n\n{merged.get('market', '')}")

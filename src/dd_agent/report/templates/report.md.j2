@@ -66,11 +66,25 @@
 - **{{ p.founder_name }}** — available: {{ p.available }}{% if p.note %} ({{ p.note }}){% endif %}
 {% if p.available %}
   - Trait scores: {% for k, v in p.trait_scores.items() %}{{ k }}={{ v }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% if p.cohort_breakdown %}  - Cohort breakdown of nearest-{{ p.nearest|length }}: {% for c, n in p.cohort_breakdown.items() %}{{ n }} in {{ c }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if p.trait_percentiles %}  - Trait percentiles vs corpus: {% for k, v in p.trait_percentiles.items() %}{{ k }}={{ '{:.0f}'.format(v) }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}{% if p.distinctive_features %}  - Distinctive features:
+{% for d in p.distinctive_features %}    - **{{ d.trait }}** {{ d.direction }} (z={{ '{:+.2f}'.format(d.z_score) }}, value {{ d.value }} vs corpus mean {{ d.corpus_mean }})
+{% endfor %}{% endif %}{% if p.archetypes %}  - Archetype clusters:
+{% for a in p.archetypes %}    - **{{ a.label }}** ({{ a.dominant_cohort }}): {{ a.member_companies | join(', ') }}
+{% endfor %}{% endif %}{% if p.cohort_breakdown %}  - Cohort breakdown of nearest-{{ p.nearest|length }}: {% for c, n in p.cohort_breakdown.items() %}{{ n }} in {{ c }}{% if not loop.last %}, {% endif %}{% endfor %}
 {% endif %}  - Nearest matches (cosine sim):
 {% for m in p.nearest %}    - {{ m.company }} ({{ '{:.2f}'.format(m.similarity) }}){% if m.cohort %} — {{ m.cohort }}{% endif %} — founder_id {{ m.founder_id }}
 {% endfor %}
 {% endif %}
+{% endfor %}
+{% endif %}
+
+{% if extras.get('comparable_exits') and extras['comparable_exits'].get('comps') %}
+### Comparable exits (raw data)
+
+| Company | Exit | Year | Value | Multiple | Acquirer / IPO |
+|---|---|---|---:|---:|---|
+{% for c in extras['comparable_exits']['comps'] %}| {{ c.company }} | {{ c.exit_type or '—' }} | {{ c.year or '—' }} | {% if c.value_usd %}${{ '{:,.0f}'.format(c.value_usd) }}{% else %}—{% endif %} | {% if c.multiple %}{{ '{:.1f}'.format(c.multiple) }}x {{ c.multiple_basis or '' }}{% else %}—{% endif %} | {{ c.acquirer_or_ipo or '—' }} |
 {% endfor %}
 {% endif %}
 

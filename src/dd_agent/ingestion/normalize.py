@@ -120,6 +120,13 @@ async def normalize(
     if cn and _is_section_header(cn):
         data["company_name"] = None
 
+    # Normalize stage to canonical enum and fall back to ARR-band inference
+    # so the Bessemer prompt's stage-conditional sections work reliably.
+    data["stage"] = _canonical_stage(
+        data.get("stage"),
+        arr_usd=(data.get("metrics") or {}).get("arr_usd"),
+    )
+
     ctx = DealContext(
         deal_id=deal_id or uuid.uuid4().hex[:12],
         company_name=data.get("company_name") or "Unknown",
@@ -421,6 +428,58 @@ def _is_section_header(name: str) -> bool:
     """A guessed company-name candidate is a section header if it matches one
     of the common deck/memo section titles (case-insensitive)."""
     return name.strip().lower() in _SECTION_HEADERS
+
+
+# Canonical stage names — the Bessemer prompt's stage-conditional sections
+# key off these. Use lower-case snake_case for clean Jinja matching.
+CANONICAL_STAGES = ("pre_seed", "seed", "series_a", "series_b", "series_c_plus", "growth")
+
+# Map LLM/regex variants into canonical names.
+_STAGE_ALIASES = {
+    "pre-seed": "pre_seed", "preseed": "pre_seed", "pre seed": "pre_seed",
+    "seed": "seed", "seed_round": "seed",
+    "series_a": "series_a", "series a": "series_a", "seriesa": "series_a", "a": "series_a",
+    "series_b": "series_b", "series b": "series_b", "seriesb": "series_b", "b": "series_b",
+    "series_c": "series_c_plus", "series c": "series_c_plus", "seriesc": "series_c_plus", "c": "series_c_plus",
+    "series_d": "series_c_plus", "series d": "series_c_plus", "d": "series_c_plus",
+    "series_e": "series_c_plus", "series e": "series_c_plus", "e": "series_c_plus",
+    "series_f": "series_c_plus",
+    "growth": "growth", "late_stage": "growth", "late stage": "growth", "pre_ipo": "growth",
+    "mezzanine": "growth", "secondary": "growth",
+}
+
+
+def _canonical_stage(raw_stage: str | None, arr_usd: float | None = None) -> str | None:
+    """Map any stage string to one of CANONICAL_STAGES.
+
+    When raw_stage is None or unrecognized, fall back to ARR-band inference:
+      <$1M       → seed
+      $1M-$10M   → series_a
+      $10M-$50M  → series_b
+      >$50M      → growth
+    Returns None when neither a stage string nor an ARR figure is available."""
+    if raw_stage:
+        key = str(raw_stage).strip().lower().replace("-", "_").replace(" ", "_")
+        # Direct hit
+        if key in CANONICAL_STAGES:
+            return key
+        # Alias hit
+        if key in _STAGE_ALIASES:
+            return _STAGE_ALIASES[key]
+        # Loosened match — accept "series_a_extension" etc by prefix
+        for canonical in CANONICAL_STAGES:
+            if key.startswith(canonical):
+                return canonical
+        # Fall through to ARR-band fallback
+    if arr_usd is not None and arr_usd >= 0:
+        if arr_usd < 1_000_000:
+            return "seed"
+        if arr_usd < 10_000_000:
+            return "series_a"
+        if arr_usd < 50_000_000:
+            return "series_b"
+        return "growth"
+    return None
 
 
 def _guess_company(memo: str, deck: str, site: str) -> str | None:

@@ -17,6 +17,13 @@ You are writing the MARKET section. Apply Principles 1, 2, 4, 5, 7.
 ### Competitor matrix
 Markdown table. Rows = competitors (4-7). Columns = `Company | Stage | Funding | Wedge | Why we still win OR why they win`. Include at least one large incumbent and one earlier-stage direct competitor. Cite each row.
 
+**For Series B+ or growth-stage deals**, group competitors into 2-3 strategic buckets before the table. Use bold subheadings:
+- **Direct PLG competitors** — bottom-up SaaS plays with similar buyer
+- **Enterprise incumbents** — established vendors who dominate the larger account
+- **Adjacent disruptors** — different category that could expand into this market
+
+Within each bucket, list 2-3 named competitors with their latest funding round + lead investor where known. For pre-Series B deals, a flat 4-7 row table is enough — skip the segmentation.
+
 ### Pattern match
 Name 3 historical companies. At least one winner (e.g. Snowflake vs Teradata). At least one analogous failure (e.g. Cloudera vs Snowflake). 1 sentence each. Apply Principle 4.
 
