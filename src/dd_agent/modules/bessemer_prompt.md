@@ -22,6 +22,8 @@ When you would otherwise hedge, prefer to ask a sharper question instead: *"Net 
 
 Build the memo with EXACTLY these sections in this order. The stage gate `[STAGE: X+]` means include this section only when STAGE is at or beyond X. `[STAGE: X only]` means include only at exactly stage X.
 
+**Use `### Section Name` (Markdown H3 headers) for every section title.** Not `**Section Name**` (bold). The report template renders H3 headers as styled section headings with anchor links; bold text is rendered as inline emphasis only.
+
 ### Investment Thesis  *(always)*
 Two to three paragraphs of third-person present-tense narrative. Open with the BET, not the description. The first sentence must read like Bessemer's: *"X is building Y at the moment Z changes."* Then unpack what specifically makes this bet asymmetric — what's the wedge, what's the unfair advantage. Cite numbers inline with `[n]`. No bullets in this section. Be decisive — hedging only where genuinely uncertain.
 

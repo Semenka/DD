@@ -421,6 +421,11 @@ _SECTION_HEADERS = frozenset(s.lower() for s in {
     # whose LLM grabs without realizing it's not a company name:
     "Investment", "Memo", "Pitch", "Round", "Funding", "Deal", "Round Summary",
     "Investment Summary", "Investment Highlights", "Investment Memorandum",
+    # AngelList "Round" naming patterns (e.g. "Round Seed", "Round Series A"):
+    "Round Seed", "Round Pre-Seed", "Round Series A", "Round Series B",
+    "Round Series C", "Round Series D",
+    # Sometimes the LLM extracts the stage label itself as company:
+    "Seed Round", "Series A Round", "Series B Round", "Series C Round",
 })
 
 

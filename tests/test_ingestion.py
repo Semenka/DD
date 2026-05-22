@@ -58,6 +58,11 @@ def test_is_section_header():
     assert norm._is_section_header("our story")  # case-insensitive
     assert norm._is_section_header("TEAM")
     assert norm._is_section_header("Traction")
+    # v5: AngelList round-naming patterns (regression: "Round Seed" snuck through)
+    assert norm._is_section_header("Round Seed")
+    assert norm._is_section_header("Seed Round")
+    assert norm._is_section_header("Series A Round")
+    # Real company names should still pass through
     assert not norm._is_section_header("Alfred")
     assert not norm._is_section_header("Linear")
     assert not norm._is_section_header("Stripe")
