@@ -279,6 +279,17 @@ async def load_or_generate_list(refresh: bool = False) -> list[dict]:
 
 
 # -------------------- photo resolution -------------------------------------
+#
+# NOTE (v8): the LIVE deal pipeline uses `dd_agent.data_sources.founder_photo`
+# for per-deal founder-photo discovery (Wikipedia → company /team → LinkedIn
+# og:image → deck-slide face crop → grounded LLM → clipping). This script's
+# helpers below predate that module and remain the canonical implementation
+# for the CORPUS BUILD use case, where the input shape is a `dict` with
+# `{name, company, company_domain}` keys (not a `Founder` dataclass) and the
+# httpx client lifecycle is managed at the build-loop level for connection
+# reuse across hundreds of founders. The two implementations are
+# intentionally kept separate — collapsing them risks breaking the 30-min
+# corpus build for negligible deduplication gain.
 
 
 async def resolve_photo(client: httpx.AsyncClient, founder: dict) -> bytes | None:
@@ -290,6 +301,11 @@ async def resolve_photo(client: httpx.AsyncClient, founder: dict) -> bytes | Non
     3. Web search for "{name} headshot"
     4. Grounded LLM lookup (cascades through openclaw→perplexity→gemini per
        data_sources.search.ask_grounded) for an explicit photo URL
+
+    For LIVE deal photo discovery, see
+    `dd_agent.data_sources.founder_photo.resolve_founder_photo` — that path
+    adds LinkedIn og:image + deck-slide face crop strategies that this
+    corpus-build script doesn't need.
     """
     name = founder["name"]
     # 1) Wikipedia

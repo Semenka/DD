@@ -34,6 +34,10 @@ class DeckCapture:
     deck_url: str
     text: str = ""                          # concatenated OCR across slides
     screenshot_paths: list[str] = field(default_factory=list)
+    # v8: per-slide OCR text aligned with `screenshot_paths`. Lets downstream
+    # consumers (e.g. founder-photo deck-slide strategy) match a specific
+    # slide PNG to its text content for precision filtering.
+    slide_texts: list[str] = field(default_factory=list)
     slide_count: int = 0
     gated: bool = False
     note: str | None = None                 # explanation when available=False
@@ -102,12 +106,13 @@ async def capture(deck_url: str, deal_id: str | None = None) -> DeckCapture:
             note="capture produced no screenshots (page may have failed to render)",
         )
 
-    text = await _ocr_screenshots_async(screenshots)
+    text, per_slide = await _ocr_screenshots_async(screenshots)
     return DeckCapture(
         available=True,
         deck_url=deck_url,
         text=text,
         screenshot_paths=[str(p) for p in screenshots],
+        slide_texts=per_slide,
         slide_count=len(screenshots),
     )
 
@@ -240,17 +245,22 @@ def _slug(s: str) -> str:
 # --- Gemini Vision OCR ------------------------------------------------------
 
 
-async def _ocr_screenshots_async(paths: list[Path]) -> str:
-    """OCR every screenshot via Gemini Vision. Returns concatenated text."""
+async def _ocr_screenshots_async(paths: list[Path]) -> tuple[str, list[str]]:
+    """OCR every screenshot via Gemini Vision. Returns (concatenated_text,
+    per_slide_texts) where per_slide_texts is aligned 1:1 with `paths` —
+    slides whose OCR failed or returned nothing become "" in that list so
+    downstream consumers can still index by slide path."""
     if not os.environ.get("GEMINI_API_KEY"):
-        return ""
+        return "", ["" for _ in paths]
     chunks = await asyncio.gather(*(_ocr_one(p) for p in paths))
-    blocks = []
+    per_slide: list[str] = []
+    blocks: list[str] = []
     for i, (p, txt) in enumerate(zip(paths, chunks), 1):
-        if not txt:
-            continue
-        blocks.append(f"### Slide {i} ({p.name})\n\n{txt.strip()}")
-    return "\n\n".join(blocks)
+        cleaned = (txt or "").strip()
+        per_slide.append(cleaned)
+        if cleaned:
+            blocks.append(f"### Slide {i} ({p.name})\n\n{cleaned}")
+    return "\n\n".join(blocks), per_slide
 
 
 async def _ocr_one(path: Path) -> str:
