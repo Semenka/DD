@@ -55,7 +55,27 @@ def render_markdown(
     )
 
 
-def render_html(*, markdown_text: str, deal_context: DealContext) -> str:
+def render_html(
+    *, markdown_text: str, deal_context: DealContext,
+    photo_b64_by_path: dict[str, str] | None = None,
+) -> str:
+    """Render markdown to a styled HTML document.
+
+    `photo_b64_by_path` maps absolute photo paths to base64-encoded image
+    bytes. The markdown→HTML conversion rewrites `![alt](path)` references
+    to `<img src="data:image/jpeg;base64,...">` so the HTML is self-
+    contained when emailed or sent over Telegram."""
+    if photo_b64_by_path:
+        # Inline-replace each known path in the markdown before HTMLification
+        for path, b64 in photo_b64_by_path.items():
+            data_url = f"data:image/jpeg;base64,{b64}"
+            # Escape parens in the path so they don't break the regex
+            import re as _re
+            markdown_text = _re.sub(
+                r"!\[([^\]]*)\]\(" + _re.escape(path) + r"\)",
+                lambda m, du=data_url: f"![{m.group(1)}]({du})",
+                markdown_text,
+            )
     env = _env()
     template = env.get_template("report.html.j2")
     return template.render(
@@ -199,6 +219,13 @@ def _inline(text: str) -> str:
     text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", text)
+    # Images: `![alt](src)` — render as <img>. Match BEFORE the link rule below
+    # since markdown image syntax is identical to a link prefixed with '!'.
+    text = re.sub(
+        r"!\[([^\]]*)\]\(([^)]+)\)",
+        r'<img class="founder-photo" src="\2" alt="\1" loading="lazy">',
+        text,
+    )
     text = re.sub(
         r"\[([^\]]+)\]\(([^)]+)\)",
         r'<a href="\2" target="_blank" rel="noopener">\1</a>',

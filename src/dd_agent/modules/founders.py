@@ -36,7 +36,7 @@ async def run_founders(ctx: DealContext, base_system: str) -> FoundersResult:
     gh_data, social_data, photo_data = await asyncio.gather(
         _gather_github(ctx.founders),
         _gather_social(ctx),
-        _gather_photos(ctx.founders),
+        _gather_photos(ctx.founders, deal_id=ctx.deal_id),
     )
 
     book = CitationBook()
@@ -86,9 +86,23 @@ async def _gather_social(ctx: DealContext) -> dict[str, list[SocialSignal]]:
     return dict(results)
 
 
-async def _gather_photos(founders: list[Founder]) -> list[PhotoAnalysis]:
+async def _gather_photos(
+    founders: list[Founder],
+    deal_id: str | None = None,
+) -> list[PhotoAnalysis]:
+    """Run the photo classifier per founder in parallel. Each photo is
+    persisted under data/reports/photos/{deal_id}/ so the report can embed
+    it via markdown image link + inline base64 HTML."""
+    from pathlib import Path
+    save_dir = None
+    if deal_id:
+        import os
+        save_dir = Path(os.environ.get("DD_DATA_DIR", "./data")) / "reports" / "photos" / deal_id
+
     async def one(f: Founder) -> PhotoAnalysis:
-        return await analyze_founder_photo(founder_name=f.name, photo_url=f.photo_url)
+        return await analyze_founder_photo(
+            founder_name=f.name, photo_url=f.photo_url, save_dir=save_dir,
+        )
     return list(await asyncio.gather(*(one(f) for f in founders)))
 
 

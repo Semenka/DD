@@ -71,6 +71,11 @@ class PhotoAnalysis:
     cohort_percentiles: dict[str, dict[str, float]] = field(default_factory=dict)  # cohort → trait → percentile
     distinctive_features: list[DistinctiveFeature] = field(default_factory=list)
     archetypes: list[Archetype] = field(default_factory=list)
+    # v6 additions — embed photo + synthesized character paragraph in the memo.
+    photo_path: str | None = None         # absolute path of saved founder photo
+    photo_base64: str | None = None       # base64-encoded image bytes for inline HTML
+    character_summary: str | None = None  # 2-3 sentence character paragraph synthesized
+                                          # from distinctive_features + archetypes + percentiles
     note: str | None = None
 
     def to_dict(self) -> dict:
@@ -85,6 +90,11 @@ class PhotoAnalysis:
             "distinctive_features": [d.__dict__ for d in self.distinctive_features],
             "archetypes": [a.__dict__ for a in self.archetypes],
             "summary_for_prompt": self.summary_for_prompt(),
+            "photo_path": self.photo_path,
+            # photo_base64 deliberately omitted from to_dict — it bloats the
+            # JSON serialized through the synthesis prompts. Renderer pulls
+            # it directly from the dataclass for the HTML output.
+            "character_summary": self.character_summary,
             "available": self.available,
             "note": self.note,
         }
@@ -95,6 +105,9 @@ class PhotoAnalysis:
         if not self.available:
             return f"Photo profile unavailable: {self.note or 'no data'}"
         lines = [f"Founder: {self.founder_name}"]
+        if self.character_summary:
+            lines.append(f"\nCharacter summary (use this verbatim or paraphrase): "
+                         f"\"{self.character_summary}\"")
         if self.trait_percentiles:
             lines.append("Trait percentiles vs unicorn corpus:")
             for trait in ("resilience", "intensity", "warmth", "presentation_polish", "energy"):
@@ -185,6 +198,7 @@ async def analyze_founder_photo(
     photo_url: str | None = None,
     photo_bytes: bytes | None = None,
     k: int = 10,
+    save_dir: "str | Path | None" = None,
 ) -> PhotoAnalysis:
     """Run the full pipeline. Returns PhotoAnalysis with available=False if any
     step fails (no exception)."""
@@ -273,6 +287,16 @@ async def analyze_founder_photo(
     distinctive = _distinctive_features(trait_scores, corpus)
     archetypes = _archetype_clusters(matches)
 
+    # v6: synthesize a character paragraph + persist photo bytes for the memo
+    character_summary = _character_summary(
+        founder_name=founder_name,
+        trait_scores=trait_scores,
+        trait_percentiles=trait_percentiles,
+        distinctive=distinctive,
+        archetypes=archetypes,
+    )
+    photo_path, photo_b64 = _persist_photo(photo_bytes, save_dir, founder_name)
+
     return PhotoAnalysis(
         founder_name=founder_name,
         photo_source=photo_url or "(inline)",
@@ -283,6 +307,9 @@ async def analyze_founder_photo(
         cohort_percentiles=cohort_percentiles,
         distinctive_features=distinctive,
         archetypes=archetypes,
+        photo_path=photo_path,
+        photo_base64=photo_b64,
+        character_summary=character_summary,
         available=True,
     )
 
@@ -442,3 +469,115 @@ def _archetype_label(centroid: dict[str, float], cohort: str) -> str:
         "unicorn_private": "Unicorn private founder",
     }
     return cohort_labels.get(cohort, "Mixed archetype")
+
+
+# --- v6 helpers: persist photo + character summary --------------------------
+
+
+def _persist_photo(
+    photo_bytes: bytes | None,
+    save_dir: "str | Path | None",
+    founder_name: str,
+) -> tuple[str | None, str | None]:
+    """Save the founder photo to disk (under save_dir if given, else
+    `data/reports/photos/`) and return (absolute_path, base64_string).
+    base64 is used for inline embed in the HTML report so it's self-
+    contained when emailed or sent over Telegram."""
+    if not photo_bytes:
+        return None, None
+    import base64
+    target_dir = (
+        Path(save_dir) if save_dir
+        else Path(os.environ.get("DD_DATA_DIR", "./data")) / "reports" / "photos"
+    )
+    try:
+        target_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return None, base64.b64encode(photo_bytes).decode("ascii")
+
+    safe_name = "".join(c if c.isalnum() else "_" for c in founder_name).strip("_") or "founder"
+    out_path = target_dir / f"{safe_name}.jpg"
+    try:
+        out_path.write_bytes(photo_bytes)
+        photo_path = str(out_path.resolve())
+    except OSError:
+        photo_path = None
+
+    b64 = base64.b64encode(photo_bytes).decode("ascii")
+    return photo_path, b64
+
+
+def _character_summary(
+    *,
+    founder_name: str,
+    trait_scores: dict[str, float],
+    trait_percentiles: dict[str, float],
+    distinctive: list[DistinctiveFeature],
+    archetypes: list[Archetype],
+) -> str:
+    """Synthesize a 2-3 sentence character paragraph from the comparison data.
+
+    Format (deterministic, no LLM call):
+      Sentence 1 — distinctive trait combination with percentile anchors
+      Sentence 2 — closest archetype with 3-4 named exemplars
+      Sentence 3 — directional comparison to the unicorn corpus
+
+    Falls back gracefully when distinctive_features or archetypes are empty."""
+
+    # Sentence 1: distinctive traits
+    if distinctive:
+        # Split into high/low groups
+        highs = [d.trait.replace("_", " ") for d in distinctive if d.direction == "high"]
+        lows = [d.trait.replace("_", " ") for d in distinctive if d.direction == "low"]
+        parts = []
+        if highs:
+            parts.append(f"distinctively high {', '.join(highs[:3])}")
+        if lows:
+            parts.append(f"lower {', '.join(lows[:3])}")
+        s1 = f"Photo profile reads as " + " and ".join(parts) + "."
+        # Add percentile anchors for up to 2 traits
+        anchors = []
+        for d in distinctive[:2]:
+            pct = trait_percentiles.get(d.trait)
+            if pct is not None:
+                anchors.append(f"{d.trait.replace('_', ' ')} {int(pct)}th percentile")
+        if anchors:
+            s1 = s1.rstrip(".") + " (" + ", ".join(anchors) + " vs the unicorn-founder corpus)."
+    else:
+        # No distinctive features → median profile
+        s1 = ("Photo profile is near the unicorn-founder median on all five traits "
+              "(resilience, intensity, warmth, presentation polish, energy) — "
+              "no single feature stands out as distinctive.")
+
+    # Sentence 2: closest archetype
+    if archetypes:
+        a = archetypes[0]
+        exemplars = a.member_companies[:4]
+        if exemplars:
+            s2 = (f"Closest archetype: {a.label} — clusters with "
+                  f"{', '.join(exemplars)} ({a.dominant_cohort}).")
+        else:
+            s2 = f"Closest archetype: {a.label}."
+    else:
+        s2 = "No clear archetype cluster from the nearest neighbors."
+
+    # Sentence 3: directional comparison
+    direction_bits = []
+    if "intensity" in trait_percentiles and trait_percentiles["intensity"] >= 70:
+        direction_bits.append("analytical authority")
+    if "warmth" in trait_percentiles and trait_percentiles["warmth"] >= 70:
+        direction_bits.append("consumer-friendly warmth")
+    if "presentation_polish" in trait_percentiles and trait_percentiles["presentation_polish"] >= 70:
+        direction_bits.append("executive polish")
+    if "energy" in trait_percentiles and trait_percentiles["energy"] >= 70:
+        direction_bits.append("kinetic energy")
+    if "resilience" in trait_percentiles and trait_percentiles["resilience"] >= 70:
+        direction_bits.append("stoic resilience")
+    if direction_bits:
+        s3 = ("Versus the unicorn-founder distribution, the founder skews toward "
+              + " and ".join(direction_bits[:2]) + ". (Visual signal only — secondary to track record.)")
+    else:
+        s3 = ("Versus the unicorn-founder distribution, the profile is unremarkable on the "
+              "dimensions we measure. (Visual signal only — secondary to track record.)")
+
+    return f"{s1} {s2} {s3}"

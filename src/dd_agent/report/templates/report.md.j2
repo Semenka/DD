@@ -60,21 +60,30 @@
 {{ founders }}
 
 {% if extras.get('photo_analyses') %}
-### Photo similarity output (raw)
+### Founder visual profile
 
 {% for p in extras['photo_analyses'] %}
-- **{{ p.founder_name }}** — available: {{ p.available }}{% if p.note %} ({{ p.note }}){% endif %}
 {% if p.available %}
-  - Trait scores: {% for k, v in p.trait_scores.items() %}{{ k }}={{ v }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% if p.trait_percentiles %}  - Trait percentiles vs corpus: {% for k, v in p.trait_percentiles.items() %}{{ k }}={{ '{:.0f}'.format(v) }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% endif %}{% if p.distinctive_features %}  - Distinctive features:
-{% for d in p.distinctive_features %}    - **{{ d.trait }}** {{ d.direction }} (z={{ '{:+.2f}'.format(d.z_score) }}, value {{ d.value }} vs corpus mean {{ d.corpus_mean }})
-{% endfor %}{% endif %}{% if p.archetypes %}  - Archetype clusters:
-{% for a in p.archetypes %}    - **{{ a.label }}** ({{ a.dominant_cohort }}): {{ a.member_companies | join(', ') }}
-{% endfor %}{% endif %}{% if p.cohort_breakdown %}  - Cohort breakdown of nearest-{{ p.nearest|length }}: {% for c, n in p.cohort_breakdown.items() %}{{ n }} in {{ c }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% endif %}  - Nearest matches (cosine sim):
-{% for m in p.nearest %}    - {{ m.company }} ({{ '{:.2f}'.format(m.similarity) }}){% if m.cohort %} — {{ m.cohort }}{% endif %} — founder_id {{ m.founder_id }}
+#### {{ p.founder_name }}
+
+{% if p.photo_path %}![{{ p.founder_name }}]({{ p.photo_path }}){% if p.photo_base64 %} <!-- inline-b64-rendered-in-html-only -->{% endif %}
+
+{% endif %}{% if p.character_summary %}{{ p.character_summary }}
+
+{% endif %}- **Trait scores**: {% for k, v in p.trait_scores.items() %}{{ k }}={{ v }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if p.trait_percentiles %}- **Percentile vs unicorn corpus**: {% for k, v in p.trait_percentiles.items() %}{{ k }}={{ '{:.0f}'.format(v) }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}{% if p.distinctive_features %}- **Distinctive features** (>±1σ from corpus mean):
+{% for d in p.distinctive_features %}  - **{{ d.trait }}** {{ d.direction }} (z={{ '{:+.2f}'.format(d.z_score) }}, value {{ d.value }} vs corpus mean {{ d.corpus_mean }})
+{% endfor %}{% endif %}{% if p.archetypes %}- **Archetype clusters** from the {{ p.nearest|length }} nearest matches:
+{% for a in p.archetypes %}  - **{{ a.label }}** ({{ a.dominant_cohort }}): {{ a.member_companies | join(', ') }}
+{% endfor %}{% endif %}{% if p.cohort_breakdown %}- **Cohort breakdown of nearest-{{ p.nearest|length }}**: {% for c, n in p.cohort_breakdown.items() %}{{ n }} in {{ c }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}- **Nearest matches** (cosine sim):
+{% for m in p.nearest %}  - {{ m.company }} ({{ '{:.2f}'.format(m.similarity) }}){% if m.cohort %} — {{ m.cohort }}{% endif %} — founder_id {{ m.founder_id }}
 {% endfor %}
+{% else %}
+#### {{ p.founder_name }}
+
+*Visual profile unavailable: {{ p.note or 'no data' }}*
 {% endif %}
 {% endfor %}
 {% endif %}
