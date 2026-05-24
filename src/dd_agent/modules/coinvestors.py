@@ -66,7 +66,8 @@ async def run_coinvestors(ctx: DealContext, base_system: str) -> CoinvestorsResu
     section_prompt = load_prompt("modules/coinvestors_prompt.md")
     system = f"{base_system}\n\n---\n\n{section_prompt}"
     user = _build_user(ctx, per_investor, rounds, notice_snapshot, elad, book)
-    text = await render_section(system=system, user=user, max_tokens=5500)
+    # v8: 5500 → 2400 tokens
+    text = await render_section(system=system, user=user, max_tokens=2400)
 
     return CoinvestorsResult(
         section_markdown=text,

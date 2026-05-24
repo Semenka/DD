@@ -8,19 +8,21 @@
     --fg: #1a1a1a; --muted: #5a6068; --bg: #fbfbfa; --rule: #e5e5e0;
     --accent: #b14b1e; --code-bg: #f3f1ec;
   }
+  @page { size: A4; margin: 1.4cm 1.6cm; }
   html, body { background: var(--bg); color: var(--fg); }
   body {
     font-family: ui-serif, "Iowan Old Style", "Charter", Georgia, serif;
-    max-width: 760px; margin: 2.5rem auto; padding: 0 1.5rem; line-height: 1.55;
-    font-size: 17px;
+    max-width: 760px; margin: 2.2rem auto; padding: 0 1.5rem; line-height: 1.45;
+    font-size: 16px;
   }
-  h1 { font-size: 2rem; margin-bottom: 0.25rem; }
-  h2 { font-size: 1.5rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.3rem; margin-top: 2rem; }
-  h3 { font-size: 1.2rem; margin-top: 1.5rem; }
-  h4 { font-size: 1rem; margin-top: 1.2rem; }
-  hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
+  h1 { font-size: 1.85rem; margin: 0 0 0.25rem; letter-spacing: -0.01em; }
+  h2 { font-size: 1.35rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.25rem; margin: 1.6rem 0 0.6rem; }
+  h3 { font-size: 1.1rem; margin: 1.1rem 0 0.4rem; }
+  h4 { font-size: 1rem; margin: 0.9rem 0 0.3rem; }
+  p { margin: 0.55rem 0; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 1.4rem 0; }
   blockquote {
-    margin: 1.2rem 0; padding: 0.7rem 1.1rem;
+    margin: 1rem 0; padding: 0.6rem 1rem;
     border-left: 4px solid var(--accent);
     background: var(--code-bg); font-style: italic; color: var(--muted);
     position: relative;
@@ -28,34 +30,66 @@
   blockquote::before {
     content: "Partner aside";
     display: block;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-style: normal;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--accent);
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.25rem;
   }
   code {
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    background: var(--code-bg); padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.9em;
+    background: var(--code-bg); padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.88em;
   }
-  pre code { display: block; padding: 0.8rem 1rem; overflow-x: auto; }
+  pre code { display: block; padding: 0.7rem 0.9rem; overflow-x: auto; }
   img.founder-photo {
-    display: block; margin: 0.8rem 0; max-width: 280px;
+    display: block; margin: 0.6rem 0; max-width: 220px;
     border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.12);
   }
-  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92em; }
-  th, td { border: 1px solid var(--rule); padding: 0.45rem 0.7rem; text-align: left; vertical-align: top; }
+  /* v8: charts (inline SVG + matplotlib PNG <img>) embedded in narrative */
+  figure.chart, svg.dd-chart, img.dd-chart {
+    display: block; margin: 0.8rem auto; max-width: 100%;
+    page-break-inside: avoid;
+  }
+  figure.chart figcaption {
+    text-align: center; font-size: 0.82em; color: var(--muted);
+    margin-top: 0.3rem; font-style: italic;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 0.8rem 0; font-size: 0.88em; }
+  th, td { border: 1px solid var(--rule); padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }
   th { background: var(--code-bg); }
   sup.ref { color: var(--accent); font-weight: 600; }
   a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
   a:hover { border-bottom-style: solid; }
+  /* v8: collapsible diligence appendix — kept compact and visually de-emphasized */
+  details.appendix {
+    margin-top: 1.6rem; padding: 0.6rem 0.9rem;
+    border: 1px solid var(--rule); border-radius: 6px;
+    background: #f8f7f3; font-size: 0.92em;
+  }
+  details.appendix > summary {
+    cursor: pointer; font-weight: 600; color: var(--muted);
+    list-style: none; padding: 0.2rem 0;
+  }
+  details.appendix > summary::-webkit-details-marker { display: none; }
+  details.appendix > summary::before { content: "▸ "; color: var(--accent); }
+  details.appendix[open] > summary::before { content: "▾ "; }
+  details.appendix h3 { font-size: 0.98rem; margin-top: 0.9rem; }
+  details.appendix h4 { font-size: 0.9rem; }
   @media print {
-    body { font-size: 11pt; max-width: 100%; }
+    body { font-size: 10.5pt; max-width: 100%; margin: 0 auto; line-height: 1.4; }
     a { color: inherit; border: none; }
-    h2 { page-break-after: avoid; }
-    pre, table { page-break-inside: avoid; }
+    h1 { font-size: 16pt; }
+    h2 { font-size: 13pt; page-break-after: avoid; }
+    h3 { font-size: 11.5pt; page-break-after: avoid; }
+    pre, table, figure.chart, svg.dd-chart, img.dd-chart, img.founder-photo { page-break-inside: avoid; }
+    /* The diligence appendix is collapsed by default in HTML; the CSS below
+       makes <details> render expanded in print so the data is captured in
+       PDF without forcing the reader to expand it manually. */
+    details.appendix { background: transparent; border: 1px solid var(--rule); }
+    details.appendix[open], details.appendix:not([open]) { /* show contents in print */ }
+    details.appendix > summary::before, details.appendix > summary::after { content: ""; }
   }
 </style>
 </head>

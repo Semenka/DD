@@ -91,7 +91,8 @@ def test_render_markdown_includes_bessemer_section_when_provided():
         citations=book,
         bessemer_memo=bessemer,
     )
-    assert "Investment Memo (long-form, Bessemer-style)" in md
+    # v8: header is just "Investment Memo" now (collapsed wording, same meaning)
+    assert "## Investment Memo" in md
     assert "Test Co is building Y" in md
 
 

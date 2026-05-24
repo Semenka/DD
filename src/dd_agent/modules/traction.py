@@ -54,7 +54,8 @@ async def run_traction(ctx: DealContext, base_system: str) -> TractionResult:
     section_prompt = load_prompt("modules/traction_prompt.md")
     system = f"{base_system}\n\n---\n\n{section_prompt}"
     user = _build_user(ctx, dist, rdcf_result, sweep_rows, review_buckets, elad, book)
-    text = await render_section(system=system, user=user, max_tokens=5000)
+    # v8: 5000 → 2400 tokens
+    text = await render_section(system=system, user=user, max_tokens=2400)
 
     return TractionResult(
         section_markdown=text,

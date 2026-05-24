@@ -9,6 +9,14 @@ You will be given:
 - The global References numbering — citations carry across into this memo
 - A `STAGE` value: one of `pre_seed`, `seed`, `series_a`, `series_b`, `series_c_plus`, `growth`
 
+## OMISSION DISCIPLINE *(v8 — supersedes earlier hedging guidance)*
+
+If a fact is wholly unknown and cannot be inferred from disclosed data, **OMIT IT.** Do not write *"data is undisclosed"*, *"NRR is unknown"*, *"(speculation: …)"*, or any other absence-narrative in the prose. Either cite the number or skip the sentence. The "What we'd need to see in the data room" section is the ONLY place where missing data is acknowledged — move every "we don't know X" thought there as a numbered diligence question.
+
+This means: if you find yourself writing a paragraph that's mostly "we couldn't confirm" / "data is not available" / "the company has not disclosed" — DELETE the paragraph. Skip the section. The reader's time is more valuable than the appearance of comprehensiveness.
+
+Apply this rule equally to the section level: if "GTM mechanics" has no disclosed numbers and no inferable signal, drop the section entirely. Do not write a paragraph saying "GTM mechanics are not disclosed."
+
 ## SPECULATION DISCIPLINE
 
 Mark `(speculation)` ONLY when the claim has no supporting source AND cannot be inferred from disclosed facts. Do NOT mark `(speculation)` when:
@@ -17,6 +25,10 @@ Mark `(speculation)` ONLY when the claim has no supporting source AND cannot be 
 - The claim is a logical conclusion from cited data (e.g., "Revenue grew 5x YoY" cited → "the company is in hypergrowth" is not speculation)
 
 When you would otherwise hedge, prefer to ask a sharper question instead: *"Net retention is undisclosed (data room ask #2)"* is stronger than *"the company may have weak retention (speculation)"*. Real Bessemer memos make decisive bets — *"Shopify will be the operating system for entrepreneurs"* — and reserve hedging for genuinely uncertain claims. Mirror that voice.
+
+## LENGTH BUDGET *(v8 — hard cap)*
+
+The entire memo must be **≤ 1200 words total** (target: 900-1100 words). At 11pt print this is ~3.5 pages — combined with the synthesis page above, the printed deliverable lands at 5 pages. **Compress. Cut every adjective that isn't load-bearing. Cut every sentence that restates what the section header already says.** Bessemer memos are tight. Yours should feel the same on the page.
 
 ## STAGE-AWARE SECTION SELECTION
 

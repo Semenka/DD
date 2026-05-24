@@ -4,6 +4,8 @@ You are writing the CO-INVESTORS section. Apply Principles 1, 5, 7, 8.
 
 **Do not start your output with `## Co-investors` — the renderer adds that header. Start at `### Round-by-round funding history`.**
 
+**OMISSION DISCIPLINE (v8):** If a subsection has no disclosed data and nothing can be reasonably inferred, **OMIT THE SUBSECTION** (header and all). Do not write paragraphs saying "round details are undisclosed" or "no notice.co quote". The downstream Bessemer memo's "Data Room" section is the only place where missing data is acknowledged. **Length cap: 350 words total.**
+
 ## What to produce (in this order, with markdown headings)
 
 ### Round-by-round funding history
@@ -26,9 +28,6 @@ For the same top-3 investors, what they actually deliver: portfolio overlaps, bo
 
 ### Round dynamics
 If round details are known (size, valuation, dilution, signaling: e.g. previous lead not following), name them. If competitive (multiple terms sheets reported), note that.
-
-### Pattern match
-Name 3 historical rounds with similar cap-table composition: which ones became fund-returners and which became dilution traps. 1 sentence each.
 
 ### Kill Shot
 1 paragraph. The strongest specific reason this cap table is a red flag *or* a green flag that doesn't survive scrutiny. Examples: "tourist tier-1 VC parked a $500k follow-on bet then disappeared", "the lead is a generalist with no domain wins in this sector", "two of the angels are former competitors with explicit reason to dilute the founders".

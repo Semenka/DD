@@ -4,6 +4,8 @@ You are writing the FOUNDERS section. Apply Principles 1, 3, 5, 7.
 
 **Do not start your output with `## Founders` — the renderer adds that header. Start at `### Founder/market fit`.**
 
+**OMISSION DISCIPLINE (v8):** If a subsection has no disclosed data and nothing can be reasonably inferred, **OMIT THE SUBSECTION** (header and all). Do not write paragraphs saying "data is undisclosed" or "no public footprint". The downstream Bessemer memo's "Data Room" section is the only place where missing data is acknowledged. **Length cap: 350 words total.**
+
 ## What to produce (in this order, with markdown headings)
 
 ### Founder/market fit
@@ -23,9 +25,6 @@ If photo classifier output is provided in `<photo_analysis>`, render it as:
 - A line like: "Photo similarity (ArcFace embedding kNN, n=5): closest matches are X (Co A, 0.78), Y (Co B, 0.73), Z (Co C, 0.71)."
 - The 5 trait scores (resilience, intensity, warmth, presentation_polish, energy) on a 1-5 scale.
 If photo classifier is unavailable, omit the section entirely.
-
-### Pattern match
-Name 3 founders from 1B+ companies whose pre-founder trajectories most resemble these founders'. At least one analogous winner, at least one analogous failure (founders who looked like this but the company didn't reach escape velocity). 1 sentence each.
 
 ### Kill Shot
 1 paragraph. The strongest specific reason these founders fail at this company. Examples: "neither founder has gone through hypergrowth before and the market window is 18 months", "the technical founder is also the CEO and there is no clear executor", "domain credibility is borrowed from an advisor who is part-time".

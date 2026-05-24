@@ -23,6 +23,7 @@ from pathlib import Path
 from .citations import Citation, CitationBook
 from .context import DealContext
 from .data_sources import exits as exits_mod
+from .data_sources import founder_photo as founder_photo_mod
 from .delivery import DeliverTo, deliver, extract_one_line_bet
 from .ingestion import clipper as clipper_mod
 from .ingestion import screenshot_deck as deck_mod
@@ -266,6 +267,25 @@ async def _run_pipeline(
             )
             ctx.company_name = verify.company_name
 
+        # v8: post-normalize founder photo cascade. Each founder gets a
+        # 6-tier discovery (deck-slide face crop → Wikipedia → company /team
+        # → LinkedIn og:image → grounded LLM → clipping embedded images).
+        # Best-effort — pipeline continues regardless. Result is stored to
+        # `founder.photo_url` for the downstream photo classifier to use.
+        if ctx.founders:
+            await store.update_status(
+                deal_id, phase="discovering founder photos", progress_pct=18,
+            )
+            try:
+                resolved = await founder_photo_mod.resolve_all_founder_photos(
+                    ctx=ctx, deck_capture=deck_capture, clipping=clipping,
+                )
+                hits = sum(1 for v in resolved.values() if v)
+                log.info("founder-photo cascade: %d/%d founders resolved",
+                         hits, len(ctx.founders))
+            except Exception as exc:  # noqa: BLE001
+                log.warning("founder-photo cascade failed: %s", exc)
+
         await store.update_status(
             deal_id, company_name=ctx.company_name,
             status=DealStatus.RUNNING, phase="running subagents", progress_pct=20,
@@ -336,6 +356,16 @@ async def _run_pipeline(
                 "deck_url": clipping.deck_url,
             }
 
+        # v8: build the inline-charts bundle (SVG percentile ruler, founder
+        # trait bars, matplotlib heatmap + timeline). Best-effort — any chart
+        # that fails to render returns '' and the template skips it.
+        from .report import charts as _charts_mod
+        try:
+            charts = _charts_mod.build_chart_bundle(extras=extras)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("chart bundle build failed: %s", exc)
+            charts = {}
+
         md = render_markdown(
             ctx=ctx,
             synthesis=synth,
@@ -346,6 +376,7 @@ async def _run_pipeline(
             citations=merged["citations"],
             extras=extras,
             bessemer_memo=merged.get("bessemer_memo"),
+            charts=charts,
         )
         # v6: collect founder photo base64 strings so render_html can embed
         # them as inline data URLs (self-contained HTML for Telegram).
@@ -507,9 +538,19 @@ def _merge_sections(market, founders, traction, coinvestors) -> dict:
     }
 
 
-_SYNTH_PROMPT = """You are writing the synthesis page of an Elad-Gil-style DD report.
+_SYNTH_PROMPT = """You are writing the synthesis page of a Bessemer/Sequoia-grade DD report.
 
 You will be given the 4 already-written sections (Market, Founders, Traction, Co-investors) for the deal, plus structured extras (founder photo profiles, ARR quality classification, existing investors). Your job is to produce a tight synthesis that a VC partner reads in 60 seconds. Output ONLY the markdown — do not restate the section content.
+
+## OMISSION DISCIPLINE *(v8 — read before writing)*
+
+If a fact is wholly unknown and cannot be inferred from disclosed data, **OMIT IT.** Do not write *"data is undisclosed"*, *"unknown"*, *"NRR is not disclosed"*, *"(speculation: …)"* or any absence-narrative. Either cite the number or skip the sentence. If an entire pillar has zero disclosed facts — skip that pillar entirely (its header included). Better to have 3 strong pillars than 4 pillars where one is hedge-padding.
+
+The downstream Recommendation block is the only place where missing data can be referenced — and only via a sharp diligence question, never as a hedge.
+
+## LENGTH BUDGET *(v8 — hard cap)*
+
+The entire synthesis page (Exec summary + Beliefs + Kill Shot + 1-line bet + Recommendation) must be **≤ 600 words total**. At 11pt print this is ~1.5 pages. **Compress. Cut adjectives. Cut sentences that restate what their header already says.**
 
 Required structure (in this order, with markdown headings):
 
@@ -595,7 +636,9 @@ async def _synthesize_bessemer(
     system_prompt = load_prompt(_BESSEMER_PROMPT_PATH)
     system = f"{base_system}\n\n---\n\n{system_prompt}"
     user = "\n".join(body_parts)
-    return await render_section(system=system, user=user, max_tokens=5500)
+    # v8: 5500 → 2200 tokens. The Bessemer memo must fit in ~3.5 print pages
+    # with the synthesis page above it landing the deliverable at 5 pages.
+    return await render_section(system=system, user=user, max_tokens=2200)
 
 
 async def _synthesize(ctx: DealContext, merged: dict, base_system: str) -> str:

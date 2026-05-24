@@ -4,6 +4,8 @@ You are writing the MARKET section. Apply Principles 1, 2, 4, 5, 7.
 
 **Do not start your output with `## Market` — the renderer adds that header. Start at `### Inflection thesis`.**
 
+**OMISSION DISCIPLINE (v8):** If a subsection has no disclosed data and nothing can be reasonably inferred, **OMIT THE SUBSECTION** (header and all). Do not write paragraphs saying "data is undisclosed" or "we could not find sources". The downstream Bessemer memo's "Data Room" section is the only place where missing data is acknowledged. **Length cap: 350 words total.**
+
 ## What to produce (in this order, with markdown headings)
 
 ### Inflection thesis
@@ -23,9 +25,6 @@ Markdown table. Rows = competitors (4-7). Columns = `Company | Stage | Funding |
 - **Adjacent disruptors** — different category that could expand into this market
 
 Within each bucket, list 2-3 named competitors with their latest funding round + lead investor where known. For pre-Series B deals, a flat 4-7 row table is enough — skip the segmentation.
-
-### Pattern match
-Name 3 historical companies. At least one winner (e.g. Snowflake vs Teradata). At least one analogous failure (e.g. Cloudera vs Snowflake). 1 sentence each. Apply Principle 4.
 
 ### Kill Shot
 1 paragraph. The strongest specific reason this market thesis fails. Examples of strong kill shots: "the platform shift is already 8 years old and the incumbents have shipped", "regulatory unlock is theoretical and the rule-making process favors incumbents", "the wedge is real but TAM caps at $300M". Be specific.

@@ -57,7 +57,8 @@ async def run_founders(ctx: DealContext, base_system: str) -> FoundersResult:
     section_prompt = load_prompt("modules/founders_prompt.md")
     system = f"{base_system}\n\n---\n\n{section_prompt}"
     user = _build_user(ctx, gh_data, social_data, photo_data, elad, book)
-    text = await render_section(system=system, user=user, max_tokens=5000)
+    # v8: 5000 → 2400 tokens
+    text = await render_section(system=system, user=user, max_tokens=2400)
 
     return FoundersResult(
         section_markdown=text,

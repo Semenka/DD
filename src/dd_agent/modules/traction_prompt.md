@@ -4,6 +4,8 @@ You are writing the TRACTION section. Apply Principles 1, 5, 6, 7.
 
 **Do not start your output with `## Traction` — the renderer adds that header. Start at `### Headline metrics`.**
 
+**OMISSION DISCIPLINE (v8):** If a subsection has no disclosed data and nothing can be reasonably inferred, **OMIT THE SUBSECTION** (header and all). Do not write paragraphs saying "ARR is undisclosed" or "no reviews found". The downstream Bessemer memo's "Data Room" section is the only place where missing data is acknowledged. **Length cap: 400 words total.**
+
 ## What to produce (in this order, with markdown headings)
 
 ### Headline metrics
@@ -40,9 +42,6 @@ Report the result from `<reverse_dcf>`:
 
 ### Independent voice
 Pull 3-5 quotes or summaries from `<review_signals>` (G2, Capterra, ProductHunt, Reddit, HN, Glassdoor). Surface what customers and employees actually say. If signals are thin or absent, say so explicitly.
-
-### Pattern match
-Name 3 SaaS companies at a similar ARR level whose trajectories are the closest analog. At least one winner, at least one stall-out. Specify the ARR snapshot you're matching against.
 
 ### Kill Shot
 1 paragraph. The strongest specific reason this traction profile fails to justify the valuation. Examples: "growth is durable but $/ARR is at the 90th percentile of public SaaS — there is no room for execution error", "ARR is real but is 70% concentrated in one customer", "Net retention is unreported, which in this sector usually means it's below 100%".

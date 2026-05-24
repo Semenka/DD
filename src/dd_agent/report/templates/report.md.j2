@@ -1,13 +1,22 @@
-# DD Report — {{ ctx.company_name }}
+# {{ ctx.company_name }}
 
-**{{ ctx.headline() }}**
-{% if ctx.one_liner %}*{{ ctx.one_liner }}*{% endif %}
+{% if ctx.one_liner %}*{{ ctx.one_liner }}*
 
-- **Ask:** {% if ctx.ask_amount_usd %}${{ '{:,.0f}'.format(ctx.ask_amount_usd) }}{% else %}unknown{% endif %} at {% if ctx.ask_valuation_usd %}${{ '{:,.0f}'.format(ctx.ask_valuation_usd) }}{% else %}unknown{% endif %} valuation
-- **Round:** {{ ctx.round_type or ctx.stage or 'unknown' }}
-- **Website:** {% if ctx.website %}[{{ ctx.website }}]({{ ctx.website }}){% else %}unknown{% endif %}
-- **Founded:** {{ ctx.founded_year or 'unknown' }}
-- **HQ:** {{ ctx.hq_location or 'unknown' }}
+{% endif %}
+{# v8: every top-matter line is conditionally rendered. No 'unknown' leaks. #}
+{% set _have_ask = ctx.ask_amount_usd or ctx.ask_valuation_usd %}
+{% if _have_ask %}- **Ask:** {% if ctx.ask_amount_usd %}${{ '{:,.0f}'.format(ctx.ask_amount_usd) }}{% endif %}{% if ctx.ask_valuation_usd %}{% if ctx.ask_amount_usd %} at {% endif %}${{ '{:,.0f}'.format(ctx.ask_valuation_usd) }} valuation{% endif %}
+{% endif %}
+{% if ctx.round_type or ctx.stage %}- **Round:** {{ ctx.round_type or ctx.stage }}
+{% endif %}
+{% if ctx.sector %}- **Sector:** {{ ctx.sector }}
+{% endif %}
+{% if ctx.website %}- **Website:** [{{ ctx.website }}]({{ ctx.website }})
+{% endif %}
+{% if ctx.founded_year %}- **Founded:** {{ ctx.founded_year }}
+{% endif %}
+{% if ctx.hq_location %}- **HQ:** {{ ctx.hq_location }}
+{% endif %}
 
 ---
 
@@ -15,44 +24,24 @@
 
 {{ synthesis }}
 
-{% if extras.get('clipping') %}
-### Input provenance (Obsidian clipping)
-
-- **Source:** {% if extras['clipping']['source_url'] %}[{{ extras['clipping']['source_url'] }}]({{ extras['clipping']['source_url'] }}){% else %}—{% endif %}
-- **Title:** {{ extras['clipping']['title'] or '—' }}
-- **Author:** {{ extras['clipping']['author'] or '—' }}
-- **Clipped at:** {{ extras['clipping']['clipped_at'] or '—' }}
-{% if extras['clipping']['deck_url'] %}- **Deck link found in body:** [{{ extras['clipping']['deck_url'] }}]({{ extras['clipping']['deck_url'] }}){% endif %}
-
-{% endif %}
-{% if extras.get('deck_capture') %}
-### Deck capture
-
-{% set d = extras['deck_capture'] %}
-{% if d.available %}
-- **Captured:** {{ d.slide_count }} slide(s) from [{{ d.deck_url }}]({{ d.deck_url }}) — OCR text fed into the traction subagent as deck_text.
-{% elif d.gated %}
-- **Skipped (gated):** [{{ d.deck_url }}]({{ d.deck_url }}) — {{ d.note }}
-{% else %}
-- **Capture failed:** [{{ d.deck_url }}]({{ d.deck_url }}) — {{ d.note }}
-{% endif %}
-
-{% endif %}
 ---
 
 {% if bessemer_memo %}
-
-## Investment Memo (long-form, Bessemer-style)
+## Investment Memo
 
 {{ bessemer_memo }}
 
 ---
-{% endif %}
 
+{% endif %}
 ## Market
 
 {{ market }}
 
+{% if charts.market_comp_ruler %}
+{{ charts.market_comp_ruler }}
+
+{% endif %}
 ---
 
 ## Founders
@@ -60,40 +49,21 @@
 {{ founders }}
 
 {% if extras.get('photo_analyses') %}
-### Founder visual profile
-
 {% for p in extras['photo_analyses'] %}
 {% if p.available %}
-#### {{ p.founder_name }}
+### {{ p.founder_name }}
 
-{% if p.photo_path %}![{{ p.founder_name }}]({{ p.photo_path }}){% if p.photo_base64 %} <!-- inline-b64-rendered-in-html-only -->{% endif %}
+{% if p.photo_path %}![{{ p.founder_name }}]({{ p.photo_path }})
 
-{% endif %}{% if p.character_summary %}{{ p.character_summary }}
-
-{% endif %}- **Trait scores**: {% for k, v in p.trait_scores.items() %}{{ k }}={{ v }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% if p.trait_percentiles %}- **Percentile vs unicorn corpus**: {% for k, v in p.trait_percentiles.items() %}{{ k }}={{ '{:.0f}'.format(v) }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% endif %}{% if p.distinctive_features %}- **Distinctive features** (>±1σ from corpus mean):
-{% for d in p.distinctive_features %}  - **{{ d.trait }}** {{ d.direction }} (z={{ '{:+.2f}'.format(d.z_score) }}, value {{ d.value }} vs corpus mean {{ d.corpus_mean }})
-{% endfor %}{% endif %}{% if p.archetypes %}- **Archetype clusters** from the {{ p.nearest|length }} nearest matches:
-{% for a in p.archetypes %}  - **{{ a.label }}** ({{ a.dominant_cohort }}): {{ a.member_companies | join(', ') }}
-{% endfor %}{% endif %}{% if p.cohort_breakdown %}- **Cohort breakdown of nearest-{{ p.nearest|length }}**: {% for c, n in p.cohort_breakdown.items() %}{{ n }} in {{ c }}{% if not loop.last %}, {% endif %}{% endfor %}
-{% endif %}- **Nearest matches** (cosine sim):
-{% for m in p.nearest %}  - {{ m.company }} ({{ '{:.2f}'.format(m.similarity) }}){% if m.cohort %} — {{ m.cohort }}{% endif %} — founder_id {{ m.founder_id }}
-{% endfor %}
-{% else %}
-#### {{ p.founder_name }}
-
-*Visual profile unavailable: {{ p.note or 'no data' }}*
 {% endif %}
-{% endfor %}
+{% if p.character_summary %}{{ p.character_summary }}
+
 {% endif %}
+{% if charts.trait_bars_by_founder and charts.trait_bars_by_founder.get(p.founder_name) %}
+{{ charts.trait_bars_by_founder[p.founder_name] }}
 
-{% if extras.get('comparable_exits') and extras['comparable_exits'].get('comps') %}
-### Comparable exits (raw data)
-
-| Company | Exit | Year | Value | Multiple | Acquirer / IPO |
-|---|---|---|---:|---:|---|
-{% for c in extras['comparable_exits']['comps'] %}| {{ c.company }} | {{ c.exit_type or '—' }} | {{ c.year or '—' }} | {% if c.value_usd %}${{ '{:,.0f}'.format(c.value_usd) }}{% else %}—{% endif %} | {% if c.multiple %}{{ '{:.1f}'.format(c.multiple) }}x {{ c.multiple_basis or '' }}{% else %}—{% endif %} | {{ c.acquirer_or_ipo or '—' }} |
+{% endif %}
+{% endif %}
 {% endfor %}
 {% endif %}
 
@@ -103,90 +73,202 @@
 
 {{ traction }}
 
-### Revenue metrics (raw data)
+{% if charts.dcf_heatmap %}
+**Reverse-DCF — required growth at the asked valuation**
 
-{% set m = ctx.metrics %}
-```
-ARR:                 {% if m.arr_usd %}${{ '{:,.0f}'.format(m.arr_usd) }}{% else %}—{% endif %}
-MRR:                 {% if m.mrr_usd %}${{ '{:,.0f}'.format(m.mrr_usd) }}{% else %}—{% endif %}
-ARR quality:         {{ m.arr_quality or '—' }}{% if m.arr_quality_notes %}
-    notes:           {{ m.arr_quality_notes }}{% endif %}
-GMV:                 {% if m.gmv_usd %}${{ '{:,.0f}'.format(m.gmv_usd) }}{% else %}—{% endif %}
-Gross revenue:       {% if m.gross_revenue_usd %}${{ '{:,.0f}'.format(m.gross_revenue_usd) }}{% else %}—{% endif %}
-Net revenue:         {% if m.net_revenue_usd %}${{ '{:,.0f}'.format(m.net_revenue_usd) }}{% else %}—{% endif %}
-Transaction volume:  {% if m.transaction_volume_usd %}${{ '{:,.0f}'.format(m.transaction_volume_usd) }}{% else %}—{% endif %}
-Take rate:           {% if m.take_rate is not none %}{{ '{:.1%}'.format(m.take_rate) }}{% else %}—{% endif %}
-Growth (YoY):        {% if m.growth_rate_yoy is not none %}{{ '{:.0%}'.format(m.growth_rate_yoy) }}{% else %}—{% endif %}
-Gross margin:        {% if m.gross_margin is not none %}{{ '{:.0%}'.format(m.gross_margin) }}{% else %}—{% endif %}
-Net retention:       {% if m.net_retention is not none %}{{ '{:.0%}'.format(m.net_retention) }}{% else %}—{% endif %}
-Customer count:      {{ m.customer_count or '—' }}
-```
+{{ charts.dcf_heatmap }}
 
-{% if extras.get('reverse_dcf') %}
-### Reverse DCF — model output (raw)
-
-```
-Ask valuation:           ${{ '{:,.0f}'.format(extras['reverse_dcf']['ask_valuation_usd']) }}
-Current ARR:             ${{ '{:,.0f}'.format(extras['reverse_dcf']['current_arr_usd']) }}
-Years to terminal:       {{ extras['reverse_dcf']['years_to_terminal'] }}
-Terminal FCF margin:     {{ '{:.0%}'.format(extras['reverse_dcf']['required_fcf_margin']) }}
-Required growth (YoY):   {% if extras['reverse_dcf']['required_growth_yoy'] %}{{ '{:.0%}'.format(extras['reverse_dcf']['required_growth_yoy']) }}{% else %}unreachable{% endif %}
-Implied terminal rev:    {% if extras['reverse_dcf']['implied_terminal_revenue_usd'] %}${{ '{:,.0f}'.format(extras['reverse_dcf']['implied_terminal_revenue_usd']) }}{% else %}—{% endif %}
-Growth %ile vs public:   {% if extras['reverse_dcf']['growth_percentile_vs_public'] is not none %}{{ '{:.0f}'.format(extras['reverse_dcf']['growth_percentile_vs_public']) }}th{% else %}—{% endif %}
-```
-
-> {{ extras['reverse_dcf']['interpretation'] }}
-
-#### Sweep — required growth at (margin, years)
-
-| Terminal margin | 5 yrs | 7 yrs | 10 yrs |
-|---|---|---|---|
-{% set rows = extras.get('sweep', []) %}
-{% set margins_seen = [] %}
-{% for r in rows %}
-{% if r.fcf_margin not in margins_seen %}
-{% set _ = margins_seen.append(r.fcf_margin) %}
 {% endif %}
-{% endfor %}
-{% for m in margins_seen %}| {{ '{:.0%}'.format(m) }} | {% for y in [5,7,10] %}{% for r in rows %}{% if r.fcf_margin == m and r.years_to_terminal == y %}{% if r.required_growth_yoy %}{{ '{:.0%}'.format(r.required_growth_yoy) }}{% else %}—{% endif %}{% endif %}{% endfor %}{% if not loop.last %} | {% endif %}{% endfor %} |
-{% endfor %}
-{% endif %}
-
 ---
 
 ## Co-investors
 
 {{ coinvestors }}
 
-{% if extras.get('funding_rounds') %}
-### Round-by-round history (raw data)
+{% if charts.funding_timeline %}
+**Funding history**
 
-| Round | Date | Amount | Post-money | Lead | Participants |
-|---|---|---:|---:|---|---|
-{% for r in extras['funding_rounds'] %}| {{ r.round_type or '—' }} | {{ r.date or '—' }} | {% if r.amount_usd %}${{ '{:,.0f}'.format(r.amount_usd) }}{% else %}—{% endif %} | {% if r.post_money_valuation_usd %}${{ '{:,.0f}'.format(r.post_money_valuation_usd) }}{% else %}—{% endif %} | {{ r.lead_investors | join(', ') if r.lead_investors else '—' }} | {{ r.participants | join(', ') if r.participants else '—' }} |
-{% endfor %}
+{{ charts.funding_timeline }}
+
 {% endif %}
-
-{% if extras.get('notice_co') %}
-### notice.co — secondary-market snapshot (raw data)
-
-{% set n = extras['notice_co'] %}
-{% if n.available %}
-```
-Last price/share:    {% if n.last_price_per_share is not none %}${{ '{:,.2f}'.format(n.last_price_per_share) }}{% else %}—{% endif %}
-Implied valuation:   {% if n.implied_valuation_usd is not none %}${{ '{:,.0f}'.format(n.implied_valuation_usd) }}{% else %}—{% endif %}
-Bid:                 {% if n.bid is not none %}${{ '{:,.2f}'.format(n.bid) }}{% else %}—{% endif %}
-Ask:                 {% if n.ask is not none %}${{ '{:,.2f}'.format(n.ask) }}{% else %}—{% endif %}
-Bid-ask mid:         {% if n.bid_ask_mid is not none %}${{ '{:,.2f}'.format(n.bid_ask_mid) }}{% else %}—{% endif %}
-Last trade date:     {{ n.last_trade_date or '—' }}
-Source:              {{ n.source_url or '—' }}
-```
-{% else %}
-*No live quote on notice.co — {{ n.note or 'reason unspecified' }}*{% if n.source_url %}
-Source attempted: [{{ n.source_url }}]({{ n.source_url }}){% endif %}
-{% endif %}
-{% endif %}
-
 ---
 
 {{ citations_md }}
+
+{# ------------------------------------------------------------------ #}
+{# v8 collapsible appendix — every raw-data block lives here so the    #}
+{# narrative above stays Bessemer-tight. Default collapsed in HTML.    #}
+{# Markdown readers see the <details> as a labelled fold.              #}
+{# ------------------------------------------------------------------ #}
+<details class="appendix">
+<summary><strong>Diligence appendix — raw data & extended citations</strong> (click to expand)</summary>
+
+{% set has_revenue_metrics = (
+    ctx.metrics.arr_usd or ctx.metrics.mrr_usd or ctx.metrics.gmv_usd or
+    ctx.metrics.gross_revenue_usd or ctx.metrics.net_revenue_usd or
+    ctx.metrics.transaction_volume_usd or ctx.metrics.take_rate is not none or
+    ctx.metrics.growth_rate_yoy is not none or ctx.metrics.gross_margin is not none or
+    ctx.metrics.net_retention is not none or ctx.metrics.customer_count or
+    ctx.metrics.arr_quality
+) %}
+{% if has_revenue_metrics %}
+
+### Revenue metrics
+
+{% set m = ctx.metrics %}
+{% if m.arr_usd %}- ARR: ${{ '{:,.0f}'.format(m.arr_usd) }}
+{% endif %}
+{% if m.mrr_usd %}- MRR: ${{ '{:,.0f}'.format(m.mrr_usd) }}
+{% endif %}
+{% if m.arr_quality %}- ARR quality: **{{ m.arr_quality }}**{% if m.arr_quality_notes %} — {{ m.arr_quality_notes }}{% endif %}
+{% endif %}
+{% if m.gmv_usd %}- GMV: ${{ '{:,.0f}'.format(m.gmv_usd) }}
+{% endif %}
+{% if m.gross_revenue_usd %}- Gross revenue: ${{ '{:,.0f}'.format(m.gross_revenue_usd) }}
+{% endif %}
+{% if m.net_revenue_usd %}- Net revenue: ${{ '{:,.0f}'.format(m.net_revenue_usd) }}
+{% endif %}
+{% if m.transaction_volume_usd %}- Transaction volume: ${{ '{:,.0f}'.format(m.transaction_volume_usd) }}
+{% endif %}
+{% if m.take_rate is not none %}- Take rate: {{ '{:.1%}'.format(m.take_rate) }}
+{% endif %}
+{% if m.growth_rate_yoy is not none %}- Growth (YoY): {{ '{:.0%}'.format(m.growth_rate_yoy) }}
+{% endif %}
+{% if m.gross_margin is not none %}- Gross margin: {{ '{:.0%}'.format(m.gross_margin) }}
+{% endif %}
+{% if m.net_retention is not none %}- Net retention: {{ '{:.0%}'.format(m.net_retention) }}
+{% endif %}
+{% if m.customer_count %}- Customer count: {{ m.customer_count }}
+{% endif %}
+{% endif %}
+{% if extras.get('reverse_dcf') and extras['reverse_dcf'].get('ask_valuation_usd') %}
+
+### Reverse DCF — full output
+
+{% set rd = extras['reverse_dcf'] %}
+- Ask valuation: ${{ '{:,.0f}'.format(rd['ask_valuation_usd']) }}
+- Current ARR: ${{ '{:,.0f}'.format(rd['current_arr_usd']) }}
+- Years to terminal: {{ rd['years_to_terminal'] }}
+- Terminal FCF margin: {{ '{:.0%}'.format(rd['required_fcf_margin']) }}
+{% if rd['required_growth_yoy'] %}- Required growth (YoY): {{ '{:.0%}'.format(rd['required_growth_yoy']) }}
+{% else %}- Required growth (YoY): unreachable at this margin/horizon
+{% endif %}
+{% if rd['implied_terminal_revenue_usd'] %}- Implied terminal revenue: ${{ '{:,.0f}'.format(rd['implied_terminal_revenue_usd']) }}
+{% endif %}
+{% if rd['growth_percentile_vs_public'] is not none %}- Growth percentile vs public SaaS: {{ '{:.0f}'.format(rd['growth_percentile_vs_public']) }}th
+{% endif %}
+
+> {{ rd['interpretation'] }}
+
+{% set rows = extras.get('sweep', []) %}
+{% if rows %}
+#### Sweep — required growth at (margin, years)
+
+| Terminal margin | 5 yrs | 7 yrs | 10 yrs |
+|---|---|---|---|
+{% set margins_seen = [] %}
+{% for r in rows %}{% if r.fcf_margin not in margins_seen %}{% set _ = margins_seen.append(r.fcf_margin) %}{% endif %}{% endfor %}
+{% for mg in margins_seen %}| {{ '{:.0%}'.format(mg) }} | {% for y in [5,7,10] %}{% for r in rows %}{% if r.fcf_margin == mg and r.years_to_terminal == y %}{% if r.required_growth_yoy %}{{ '{:.0%}'.format(r.required_growth_yoy) }}{% else %}—{% endif %}{% endif %}{% endfor %}{% if not loop.last %} | {% endif %}{% endfor %} |
+{% endfor %}
+{% endif %}
+{% endif %}
+{% if extras.get('funding_rounds') %}
+{% set _has_round = namespace(any=false) %}
+{% for r in extras['funding_rounds'] %}{% if r.round_type or r.date or r.amount_usd or r.post_money_valuation_usd or r.lead_investors or r.participants %}{% set _has_round.any = true %}{% endif %}{% endfor %}
+{% if _has_round.any %}
+
+### Round-by-round history
+
+| Round | Date | Amount | Post-money | Lead | Participants |
+|---|---|---:|---:|---|---|
+{% for r in extras['funding_rounds'] %}{% if r.round_type or r.date or r.amount_usd or r.post_money_valuation_usd or r.lead_investors or r.participants %}| {{ r.round_type or '' }} | {{ r.date or '' }} | {% if r.amount_usd %}${{ '{:,.0f}'.format(r.amount_usd) }}{% endif %} | {% if r.post_money_valuation_usd %}${{ '{:,.0f}'.format(r.post_money_valuation_usd) }}{% endif %} | {{ r.lead_investors | join(', ') if r.lead_investors else '' }} | {{ r.participants | join(', ') if r.participants else '' }} |
+{% endif %}{% endfor %}
+{% endif %}
+{% endif %}
+{% if extras.get('comparable_exits') and extras['comparable_exits'].get('comps') %}
+
+### Comparable exits
+
+| Company | Exit | Year | Value | Multiple | Acquirer / IPO |
+|---|---|---|---:|---:|---|
+{% for c in extras['comparable_exits']['comps'] %}| {{ c.company }} | {{ c.exit_type or '' }} | {{ c.year or '' }} | {% if c.value_usd %}${{ '{:,.0f}'.format(c.value_usd) }}{% endif %} | {% if c.multiple %}{{ '{:.1f}'.format(c.multiple) }}x {{ c.multiple_basis or '' }}{% endif %} | {{ c.acquirer_or_ipo or '' }} |
+{% endfor %}
+{% endif %}
+{% if extras.get('notice_co') and extras['notice_co'].get('available') %}
+
+### notice.co — secondary-market snapshot
+
+{% set n = extras['notice_co'] %}
+{% if n.last_price_per_share is not none %}- Last price/share: ${{ '{:,.2f}'.format(n.last_price_per_share) }}
+{% endif %}
+{% if n.implied_valuation_usd is not none %}- Implied valuation: ${{ '{:,.0f}'.format(n.implied_valuation_usd) }}
+{% endif %}
+{% if n.bid is not none %}- Bid: ${{ '{:,.2f}'.format(n.bid) }}
+{% endif %}
+{% if n.ask is not none %}- Ask: ${{ '{:,.2f}'.format(n.ask) }}
+{% endif %}
+{% if n.bid_ask_mid is not none %}- Bid-ask mid: ${{ '{:,.2f}'.format(n.bid_ask_mid) }}
+{% endif %}
+{% if n.last_trade_date %}- Last trade date: {{ n.last_trade_date }}
+{% endif %}
+{% if n.source_url %}- Source: [{{ n.source_url }}]({{ n.source_url }})
+{% endif %}
+{% endif %}
+{% if extras.get('photo_analyses') %}
+{% set _photo_visible = namespace(any=false) %}
+{% for p in extras['photo_analyses'] %}{% if p.available %}{% set _photo_visible.any = true %}{% endif %}{% endfor %}
+{% if _photo_visible.any %}
+
+### Founder photo classifier — full detail
+
+{% for p in extras['photo_analyses'] %}
+{% if p.available %}
+#### {{ p.founder_name }}
+
+- **Trait scores:** {% for k, v in p.trait_scores.items() %}{{ k }}={{ v }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% if p.trait_percentiles %}- **Percentile vs unicorn corpus:** {% for k, v in p.trait_percentiles.items() %}{{ k }}={{ '{:.0f}'.format(v) }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}
+{% if p.distinctive_features %}- **Distinctive features** (>±1σ from corpus mean):
+{% for d in p.distinctive_features %}  - {{ d.trait }} {{ d.direction }} (z={{ '{:+.2f}'.format(d.z_score) }})
+{% endfor %}{% endif %}
+{% if p.archetypes %}- **Archetype clusters** from the {{ p.nearest|length }} nearest matches:
+{% for a in p.archetypes %}  - **{{ a.label }}** ({{ a.dominant_cohort }}): {{ a.member_companies | join(', ') }}
+{% endfor %}{% endif %}
+{% if p.cohort_breakdown %}- **Cohort breakdown of nearest-{{ p.nearest|length }}:** {% for c, n in p.cohort_breakdown.items() %}{{ n }} in {{ c }}{% if not loop.last %}, {% endif %}{% endfor %}
+{% endif %}
+- **Nearest matches** (cosine sim):
+{% for mm in p.nearest %}  - {{ mm.company }} ({{ '{:.2f}'.format(mm.similarity) }}){% if mm.cohort %} — {{ mm.cohort }}{% endif %}
+{% endfor %}
+
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endif %}
+{% if extras.get('clipping') %}
+
+### Input provenance (Obsidian clipping)
+
+{% set c = extras['clipping'] %}
+{% if c['source_url'] %}- Source: [{{ c['source_url'] }}]({{ c['source_url'] }})
+{% endif %}
+{% if c['title'] %}- Title: {{ c['title'] }}
+{% endif %}
+{% if c['author'] %}- Author: {{ c['author'] }}
+{% endif %}
+{% if c['clipped_at'] %}- Clipped at: {{ c['clipped_at'] }}
+{% endif %}
+{% if c['deck_url'] %}- Deck link in body: [{{ c['deck_url'] }}]({{ c['deck_url'] }})
+{% endif %}
+{% endif %}
+{% if extras.get('deck_capture') %}
+
+### Deck capture status
+
+{% set d = extras['deck_capture'] %}
+{% if d.available %}- Captured: {{ d.slide_count }} slide(s) from [{{ d.deck_url }}]({{ d.deck_url }}); OCR fed to traction subagent.
+{% elif d.gated %}- Skipped (gated): [{{ d.deck_url }}]({{ d.deck_url }}) — {{ d.note }}
+{% else %}- Capture failed: [{{ d.deck_url }}]({{ d.deck_url }}) — {{ d.note }}
+{% endif %}
+{% endif %}
+
+</details>

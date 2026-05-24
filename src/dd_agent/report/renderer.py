@@ -39,7 +39,19 @@ def render_markdown(
     citations: CitationBook,
     extras: dict | None = None,
     bessemer_memo: str | None = None,
+    charts: dict | None = None,
 ) -> str:
+    """Render the deal report to markdown.
+
+    `charts` (v8): optional dict containing pre-rendered chart strings keyed
+    by where they should appear in the template:
+      - `market_comp_ruler`: inline SVG percentile ruler
+      - `dcf_heatmap`: inline `<img>` (matplotlib PNG base64) for the
+                      reverse-DCF heatmap
+      - `funding_timeline`: inline `<img>` for the funding-rounds timeline
+      - `trait_bars_by_founder`: dict[founder_name -> SVG bars]
+    Missing keys cause the corresponding section to be skipped via Jinja
+    `{% if charts.x %}` guards in the template."""
     env = _env()
     template = env.get_template("report.md.j2")
     return template.render(
@@ -52,6 +64,7 @@ def render_markdown(
         coinvestors=coinvestors,
         citations_md=citations.render_markdown(),
         extras=extras or {},
+        charts=charts or {},
     )
 
 
@@ -104,10 +117,33 @@ def render_pdf(*, html: str, out_path: str | None = None) -> bytes:
 # --- minimal markdown → HTML (no external dep) -------------------------------
 
 
+_RAW_HTML_BLOCK_TAGS = (
+    "<details", "</details>",
+    "<summary", "</summary>",
+    "<svg", "</svg>",
+    "<figure", "</figure>",
+    "<figcaption", "</figcaption>",
+)
+
+
+def _is_raw_html_block_line(line: str) -> bool:
+    """A line is treated as raw HTML if it begins with one of the whitelisted
+    block-level tags. Used to gate the v8 appendix / chart embeds — we want
+    `<details>` and `<svg>` to survive the markdown pass intact."""
+    stripped = line.lstrip()
+    return any(stripped.startswith(tag) for tag in _RAW_HTML_BLOCK_TAGS)
+
+
 def _markdown_to_html(text: str) -> str:
     """Tiny markdown subset: headings, bold/italic, links, code, tables, lists,
     blockquotes, refs `[n]`. Sufficient for a clean DD report; not a general
-    markdown engine."""
+    markdown engine.
+
+    v8: also passes through raw HTML for a small whitelist of block tags
+    (<details>, <summary>, <svg>, <figure>) so the collapsible appendix +
+    inline SVG charts render correctly. A line starting with one of these
+    tags is emitted verbatim; multi-line SVG blocks stay in raw mode until
+    their matching close tag is seen."""
     lines = text.splitlines()
     out: list[str] = []
     in_code = False
@@ -115,6 +151,7 @@ def _markdown_to_html(text: str) -> str:
     table_rows: list[list[str]] = []
     in_list = False
     list_type = None
+    in_raw_svg = False  # multi-line SVG content pass-through
 
     def flush_table():
         nonlocal in_table, table_rows
@@ -142,6 +179,24 @@ def _markdown_to_html(text: str) -> str:
 
     for raw in lines:
         line = raw.rstrip()
+
+        # --- raw HTML pass-through (v8 appendix + inline SVG charts) ---
+        # Once inside a multi-line <svg>, every line passes through verbatim
+        # until we see </svg>.
+        if in_raw_svg:
+            out.append(raw)
+            if "</svg>" in line:
+                in_raw_svg = False
+            continue
+        if _is_raw_html_block_line(line):
+            flush_list()
+            flush_table()
+            out.append(raw)
+            # If the SVG block didn't close on the same line, enter raw mode.
+            if line.lstrip().startswith("<svg") and "</svg>" not in line:
+                in_raw_svg = True
+            continue
+
         if line.startswith("```"):
             flush_list()
             flush_table()

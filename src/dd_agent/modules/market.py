@@ -69,7 +69,9 @@ async def run_market(ctx: DealContext, base_system: str) -> MarketResult:
     section_prompt = load_prompt("modules/market_prompt.md")
     system = f"{base_system}\n\n---\n\n{section_prompt}"
     user = _build_user(ctx, web_results, grounded_answers, grounded_questions, elad)
-    text = await render_section(system=system, user=user, max_tokens=4500)
+    # v8: 4500 → 2400 tokens — analyst sections feed the synthesizer, not
+    # the final memo. They no longer need to be exhaustive narratives.
+    text = await render_section(system=system, user=user, max_tokens=2400)
 
     return MarketResult(section_markdown=text, citations=book.citations, web_results=web_results)
 

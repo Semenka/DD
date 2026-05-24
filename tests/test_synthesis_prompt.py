@@ -87,3 +87,32 @@ def test_downstream_sections_unchanged():
     assert "### Kill Shot" in _SYNTH_PROMPT
     assert "### 1-line bet" in _SYNTH_PROMPT
     assert "### Recommendation" in _SYNTH_PROMPT
+
+
+# ---------- v8 additions: omission discipline + length cap -----------------
+
+
+def test_v8_omission_discipline_rule_present():
+    """The synthesis prompt must instruct the model to OMIT entire pillars
+    rather than narrate absence — the core v8 'no unknown' fix."""
+    assert "OMISSION DISCIPLINE" in _SYNTH_PROMPT
+    # Specific language: prohibit absence-narrative phrases
+    text = _SYNTH_PROMPT.lower()
+    assert "omit" in text
+    # Hedge phrases the model must NOT use
+    assert "data is undisclosed" in text or '"unknown"' in text or "not disclosed" in text
+
+
+def test_v8_word_cap_present():
+    """The synthesis prompt must include a hard word-count budget so the
+    final memo lands at the requested 5 pages."""
+    assert "LENGTH BUDGET" in _SYNTH_PROMPT or "≤ 600 words" in _SYNTH_PROMPT
+
+
+def test_v8_bessemer_omission_rule_present():
+    """The Bessemer-memo prompt must enforce the same omission discipline."""
+    from pathlib import Path
+    p = Path(__file__).resolve().parent.parent / "src" / "dd_agent" / "modules" / "bessemer_prompt.md"
+    body = p.read_text()
+    assert "OMISSION DISCIPLINE" in body
+    assert "LENGTH BUDGET" in body or "≤ 1200 words" in body
