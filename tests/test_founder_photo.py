@@ -164,10 +164,14 @@ async def test_cascade_returns_none_when_all_tiers_fail(tmp_path: Path):
 
     with patch.multiple(
         "dd_agent.data_sources.founder_photo",
+        # v8 + v9 tiers — pre-discovery + 7 strategies
+        _discover_linkedin_url=AsyncMock(return_value=None),
+        _discover_company_website=AsyncMock(return_value=None),
         _from_deck_slides=AsyncMock(return_value=None),
         _from_wikipedia=AsyncMock(return_value=None),
         _from_company_team=AsyncMock(return_value=None),
         _from_linkedin_og=AsyncMock(return_value=None),
+        _from_web_image_search=AsyncMock(return_value=None),
         _from_grounded=AsyncMock(return_value=None),
         _from_clipping=AsyncMock(return_value=None),
     ):

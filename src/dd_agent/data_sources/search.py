@@ -393,9 +393,12 @@ def _gemini_extract(data: dict) -> tuple[str, list[SearchResult]]:
 
 
 async def _gemini_search(query: str, max_results: int) -> list[SearchResult]:
+    # v9: bumped 30s → 60s. gemini-3.5-flash with google_search grounding
+    # routinely takes 35-50s for non-trivial queries; the old 30s ceiling
+    # was killing legitimate searches before the model could finish.
     data = await _gemini_call(
         f"Search the web for: {query}\n\nList the most relevant 8 URLs with one-line summaries.",
-        timeout=30.0,
+        timeout=60.0,
     )
     _, sources = _gemini_extract(data)
     return sources[:max_results]
