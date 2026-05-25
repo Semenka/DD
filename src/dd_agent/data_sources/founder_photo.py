@@ -273,8 +273,12 @@ async def _discover_company_website(ctx: "DealContext") -> None:
     and pick the first result whose domain doesn't smell like a directory
     (linkedin, crunchbase, wikipedia). Populates `ctx.website` in-place.
 
-    Without this step, `_from_company_team` was a no-op for any deal whose
-    memo didn't include a website URL — the v8 Alfred case."""
+    v9 hardening: name collisions are common for short company names
+    ("Alfred" is both an obscure transportation-infrastructure startup
+    AND a popular macOS productivity tool). To reject the wrong-company
+    case, the candidate site is fetched and validated to mention at
+    least one founder name. If validation fails, the discovery is
+    abandoned — better no website than the wrong one."""
     if not ctx.company_name:
         return
     try:
@@ -287,29 +291,77 @@ async def _discover_company_website(ctx: "DealContext") -> None:
         "github.com", "pitchbook.com", "tracxn.com", "owler.com",
         "bloomberg.com", "techcrunch.com", "reuters.com",
     )
-    q = f'"{ctx.company_name}" official site'
-    try:
-        results = await web_search(q, max_results=8)
-    except Exception:
-        return
-    for r in results:
-        from urllib.parse import urlparse
+    # Founder names give the strongest validation signal — search with them
+    # bundled into the query so the result is much more likely to be the
+    # right company.
+    founder_term = ""
+    if ctx.founders:
+        founder_term = f' "{ctx.founders[0].name}"'
+    queries = [
+        f'"{ctx.company_name}" official site{founder_term}',
+        f'"{ctx.company_name}" company website',
+    ]
+    seen_hosts: set[str] = set()
+    candidates: list[str] = []
+    for q in queries:
         try:
-            host = urlparse(r.url).hostname or ""
+            results = await web_search(q, max_results=8)
         except Exception:
             continue
-        if any(h in host for h in skip_hosts):
-            continue
-        # Heuristic: company name should appear in the domain (helps reject
-        # press articles that link to articles about the company instead).
-        slug = re.sub(r"[^a-z0-9]", "", ctx.company_name.lower())
-        host_clean = re.sub(r"[^a-z0-9]", "", host.lower())
-        if slug and slug not in host_clean:
-            continue
-        ctx.website = f"https://{host}"
-        log.info("discovered website for %s: %s",
-                 ctx.company_name, ctx.website)
+        for r in results:
+            from urllib.parse import urlparse
+            try:
+                host = urlparse(r.url).hostname or ""
+            except Exception:
+                continue
+            if not host or host in seen_hosts:
+                continue
+            if any(h in host for h in skip_hosts):
+                continue
+            slug = re.sub(r"[^a-z0-9]", "", ctx.company_name.lower())
+            host_clean = re.sub(r"[^a-z0-9]", "", host.lower())
+            if slug and slug not in host_clean:
+                continue
+            seen_hosts.add(host)
+            candidates.append(host)
+
+    if not candidates:
         return
+
+    # Validate each candidate by fetching the homepage and checking for
+    # founder-name presence. If no founders to check against, fall back
+    # to the original "first non-skip host" heuristic.
+    founder_first_lasts: list[str] = []
+    for f in (ctx.founders or []):
+        for part in (f.name.split(" ", 1)[0], f.name.rsplit(" ", 1)[-1]):
+            if len(part) >= 3:
+                founder_first_lasts.append(part.lower())
+
+    async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+        for host in candidates:
+            url = f"https://{host}"
+            if not founder_first_lasts:
+                # No founder signal to validate against — accept first.
+                ctx.website = url
+                log.info("discovered website for %s: %s (no founder validation)",
+                         ctx.company_name, url)
+                return
+            try:
+                r = await client.get(url, headers={"User-Agent": _UA})
+                if r.status_code != 200:
+                    continue
+                body_low = r.text.lower()
+            except Exception:
+                continue
+            if any(name in body_low for name in founder_first_lasts):
+                ctx.website = url
+                log.info("discovered + validated website for %s: %s "
+                         "(founder name present)", ctx.company_name, url)
+                return
+            log.debug("rejected candidate %s — no founder name on homepage", url)
+    log.info("could not validate any candidate website for %s — none of "
+             "the matched hosts mention a known founder name",
+             ctx.company_name)
 
 
 # ---------- strategy implementations ---------------------------------------
