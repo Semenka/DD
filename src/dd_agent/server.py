@@ -91,8 +91,11 @@ async def submit_deal(
 async def get_report_status(deal_id: str) -> dict[str, Any]:
     """Get the current status of a submitted deal.
 
-    Returns: {status, phase, progress_pct, company, error?}
+    Returns: {status, phase, progress_pct, company, error?, quality_score?}
     Status is one of: queued | ingesting | running | done | failed.
+    `quality_score` (0-10, present once scored) is the v10 quality-gate
+    confidence — a value below 4 means the report shipped with a LOW
+    CONFIDENCE banner and should be treated with caution.
     """
     await _store.init()
     record = await _store.get(deal_id)
