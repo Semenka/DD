@@ -134,6 +134,8 @@ async def get_report(
         "company": record.company_name,
         "pdf_path": record.report_pdf_path,
         "citations": json.loads(record.citations_json) if record.citations_json else [],
+        "quality_score": record.quality_score,   # v10: 0-10 confidence
+        "quality_notes": record.quality_notes,
     }
     if include_markdown:
         result["markdown"] = record.report_markdown

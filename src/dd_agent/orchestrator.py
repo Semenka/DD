@@ -366,18 +366,40 @@ async def _run_pipeline(
             log.warning("chart bundle build failed: %s", exc)
             charts = {}
 
-        md = render_markdown(
-            ctx=ctx,
-            synthesis=synth,
-            market=merged["market"],
-            founders=merged["founders"],
-            traction=merged["traction"],
-            coinvestors=merged["coinvestors"],
-            citations=merged["citations"],
-            extras=extras,
-            bessemer_memo=merged.get("bessemer_memo"),
-            charts=charts,
-        )
+        def _assemble(synthesis_text: str) -> str:
+            return render_markdown(
+                ctx=ctx,
+                synthesis=synthesis_text,
+                market=merged["market"],
+                founders=merged["founders"],
+                traction=merged["traction"],
+                coinvestors=merged["coinvestors"],
+                citations=merged["citations"],
+                extras=extras,
+                bessemer_memo=merged.get("bessemer_memo"),
+                charts=charts,
+            )
+
+        md = _assemble(synth)
+
+        # v10: Quality Gate. Score the assembled report before it ships so
+        # garbage (wrong company, empty sections) is never silently delivered.
+        # Bounded: at most ONE synthesis retry, then ship with a confidence
+        # banner. The gate can NEVER block shipping — any gate error falls
+        # through to "ship with deterministic score only".
+        quality_score: float | None = None
+        quality_notes: str | None = None
+        try:
+            await store.update_status(
+                deal_id, phase="scoring report quality", progress_pct=92,
+            )
+            md, quality_score, quality_notes = await _quality_gate(
+                ctx=ctx, merged=merged, extras=extras, base_system=base_system,
+                synth=synth, assemble=_assemble, store=store, deal_id=deal_id,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("quality gate errored (%s) — shipping ungated", exc)
+
         # v6: collect founder photo base64 strings so render_html can embed
         # them as inline data URLs (self-contained HTML for Telegram).
         photo_b64_by_path: dict[str, str] = {}
@@ -404,6 +426,8 @@ async def _run_pipeline(
             html=html,
             citations=merged["citations"].to_list(),
             pdf_path=pdf_path,
+            quality_score=quality_score,
+            quality_notes=quality_notes,
         )
 
         if deliver_to is not None:
@@ -491,6 +515,97 @@ async def _safe(coro, label: str):
 class _StubResult:
     section_markdown: str
     citations: list[Citation]
+
+
+async def _quality_gate(
+    *,
+    ctx: DealContext,
+    merged: dict,
+    extras: dict,
+    base_system: str,
+    synth: str,
+    assemble,                 # callable(synthesis_text) -> markdown
+    store: DealStore,
+    deal_id: str,
+) -> tuple[str, float, str]:
+    """v10 Quality Gate. Scores the assembled report, applies the
+    ship/retry/flag decision, and returns (final_markdown, score, notes).
+
+    Decision branches:
+      - score >= PASS_THRESHOLD (7): ship, prepend a `> Quality: N/10` line.
+      - RETRY_FLOOR (4) <= score < 7: re-run the synthesis ONCE with the
+        reviewer critique injected (bounded — one extra LLM call), re-assemble,
+        re-score once, ship with a `(after 1 retry)` note.
+      - score < 4: ship but prepend a prominent LOW CONFIDENCE banner and set
+        the status phase to `low-quality — needs review`.
+
+    A company-identity failure short-circuits to the flag branch — no retry can
+    fix the wrong company, so we don't waste an LLM call on it."""
+    from .report.quality import score_report, PASS_THRESHOLD, RETRY_FLOOR
+
+    md = assemble(synth)
+    report = await score_report(ctx=ctx, markdown=md, merged=merged, extras=extras)
+    log.info("quality gate: deal %s scored %.1f (det=%.1f, llm=%s) — %s",
+             deal_id, report.score, report.deterministic_score,
+             report.llm_score, report.verdict)
+
+    identity_failed = "company_identity" in report.failed_checks
+
+    # --- ship clean ---
+    if report.score >= PASS_THRESHOLD:
+        banner = f"> **Quality: {report.score:.0f}/10** — {report.verdict}\n\n"
+        return banner + md, report.score, report.verdict
+
+    # --- bounded retry (skip when identity is the problem) ---
+    if report.score >= RETRY_FLOOR and not identity_failed:
+        why = ""
+        if report.weakest_sections:
+            ws = report.weakest_sections[0]
+            why = f"{ws.get('section', '')}: {ws.get('why', '')}".strip(": ")
+        log.info("quality gate: deal %s in retry band — re-running synthesis "
+                 "with critique: %s", deal_id, why or "(general)")
+        await store.update_status(
+            deal_id, phase="quality retry — re-synthesizing", progress_pct=94,
+        )
+        try:
+            critique = (
+                "\n\n## REVIEWER CRITIQUE (address this directly)\n"
+                f"A partner flagged the previous draft: {why or report.verdict}. "
+                "Tighten the weak area, make the call more decisive, and ensure "
+                "every pillar is backed by a specific fact or a sharp diligence "
+                "question — not a hedge."
+            )
+            synth2 = await _synthesize(ctx, merged, base_system + critique)
+            md2 = assemble(synth2)
+            report2 = await score_report(
+                ctx=ctx, markdown=md2, merged=merged, extras=extras,
+            )
+            log.info("quality gate: deal %s rescored %.1f after retry (was %.1f)",
+                     deal_id, report2.score, report.score)
+            # Keep whichever draft scored higher.
+            if report2.score >= report.score:
+                banner = (f"> **Quality: {report2.score:.0f}/10** "
+                          f"(after 1 retry) — {report2.verdict}\n\n")
+                return banner + md2, report2.score, report2.verdict
+        except Exception as exc:  # noqa: BLE001
+            log.warning("quality retry failed (%s) — shipping original draft", exc)
+        banner = (f"> **Quality: {report.score:.0f}/10** — {report.verdict}\n\n")
+        return banner + md, report.score, report.verdict
+
+    # --- flag (score < 4, or identity failed) ---
+    top = ", ".join(report.failed_checks[:3]) or "multiple checks"
+    await store.update_status(
+        deal_id, phase="low-quality — needs review",
+    )
+    banner = (
+        f"> ⚠️ **LOW CONFIDENCE — {report.score:.0f}/10.** {report.verdict}\n"
+        f">\n"
+        f"> This report did not pass quality checks (failed: {top}). "
+        f"Treat its conclusions with caution and re-submit with a clearer "
+        f"memo, the company name in the filename, or a deck PDF.\n\n"
+    )
+    notes = f"LOW CONFIDENCE: failed {top}. {report.verdict}"
+    return banner + md, report.score, notes
 
 
 def _merge_sections(market, founders, traction, coinvestors) -> dict:

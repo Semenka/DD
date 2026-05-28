@@ -41,6 +41,8 @@ class DealRecord:
     report_html: str | None = None
     report_pdf_path: str | None = None
     citations_json: str | None = None
+    quality_score: float | None = None      # v10: 0-10 quality-gate score
+    quality_notes: str | None = None         # v10: gate verdict / failed checks
 
     def to_summary(self) -> dict[str, Any]:
         return {
@@ -51,6 +53,7 @@ class DealRecord:
             "progress_pct": self.progress_pct,
             "created_at": self.created_at,
             "error": self.error,
+            "quality_score": self.quality_score,
         }
 
 
@@ -68,16 +71,22 @@ CREATE TABLE IF NOT EXISTS deals (
     report_markdown TEXT,
     report_html TEXT,
     report_pdf_path TEXT,
-    citations_json TEXT
+    citations_json TEXT,
+    quality_score REAL,
+    quality_notes TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_deals_status ON deals(status);
 CREATE INDEX IF NOT EXISTS idx_deals_created_at ON deals(created_at);
 """
 
-# Run light-touch migrations so existing DBs pick up new columns.
+# Run light-touch migrations so existing DBs pick up new columns. Each runs
+# inside a try/except so "duplicate column" on an already-migrated DB is a
+# harmless no-op.
 _MIGRATIONS = [
     "ALTER TABLE deals ADD COLUMN report_pdf_path TEXT",
+    "ALTER TABLE deals ADD COLUMN quality_score REAL",   # v10
+    "ALTER TABLE deals ADD COLUMN quality_notes TEXT",   # v10
 ]
 
 
@@ -168,17 +177,22 @@ class DealStore:
         html: str,
         citations: list[dict[str, Any]],
         pdf_path: str | None = None,
+        quality_score: float | None = None,
+        quality_notes: str | None = None,
     ) -> None:
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 "UPDATE deals SET report_markdown = ?, report_html = ?, "
-                "report_pdf_path = ?, citations_json = ?, status = ?, phase = ?, "
+                "report_pdf_path = ?, citations_json = ?, quality_score = ?, "
+                "quality_notes = ?, status = ?, phase = ?, "
                 "progress_pct = ?, updated_at = ? WHERE deal_id = ?",
                 (
                     markdown,
                     html,
                     pdf_path,
                     json.dumps(citations),
+                    quality_score,
+                    quality_notes,
                     DealStatus.DONE.value,
                     "done",
                     100,
@@ -222,4 +236,6 @@ def _row_to_record(row: aiosqlite.Row) -> DealRecord:
         report_html=row["report_html"],
         report_pdf_path=row["report_pdf_path"] if "report_pdf_path" in row.keys() else None,
         citations_json=row["citations_json"],
+        quality_score=row["quality_score"] if "quality_score" in row.keys() else None,
+        quality_notes=row["quality_notes"] if "quality_notes" in row.keys() else None,
     )
